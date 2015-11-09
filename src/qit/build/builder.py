@@ -105,17 +105,20 @@ class CppBuilder(object):
     def get_range_generator(self):
         return "qit::RangeGenerator"
 
-    def get_range_constructor_args(self, range):
-        return (str(range.stop),)
-
     # Take
 
     def get_take_iterator(self, take):
         return "qit::TakeIterator<{} >" \
                 .format(take.collection.get_iterator_type(self))
 
-    def get_take_constructor_args(self, take):
-        return (str(take.count),)
+    # Map
+
+    def get_map_iterator(self, map):
+        return "qit::MapIterator<{}, {}, {} >" \
+                .format(map.collection.get_iterator_type(self),
+                        map.function.return_type.get_element_type(self),
+                        map.function.name)
+
 
     # Product
 
@@ -249,3 +252,20 @@ class CppBuilder(object):
         self.writer.block_end()
 
         self.writer.class_end()
+
+    # Function
+
+    def declare_function(self, function):
+        self.writer.class_begin(function.name)
+        self.writer.line("public:")
+        params = [ "const {} &{}".format(c.get_element_type(self), name)
+                   for c, name in function.params ]
+        self.writer.line("{} operator()({})",
+                         function.return_type.get_element_type(self),
+                         ",".join(params))
+        self.writer.block_begin()
+        self.writer.text(function.inline_code)
+        self.writer.block_end()
+
+        self.writer.class_end()
+

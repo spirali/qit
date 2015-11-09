@@ -15,6 +15,7 @@ class CppEnv(object):
         self.build_dir = os.path.join(os.getcwd(), "qit-build")
         self.compiler = "g++"
         self.cpp_flags = ("-O3",
+                          "-std=c++11",
                           "-march=native",
                           "-I", paths.LIBQIT_DIR)
 

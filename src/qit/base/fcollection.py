@@ -7,8 +7,6 @@ class FullCollection(Collection):
     def random(self):
         return RandomCollection(self)
 
-
-
 class RandomCollection(Collection):
 
     def __init__(self, collection):

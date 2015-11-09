@@ -48,6 +48,9 @@ class Product(FullCollection):
     def add(self, name, collection):
         self.items.append((name, collection))
 
+    def declare_element(self, builder):
+        builder.declare_product_class(self)
+
     def declare_iterator(self, builder):
         for c in self.collections:
             c.declare_iterator(builder)

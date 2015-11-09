@@ -1,6 +1,6 @@
 import testutils
 
-from qit import Range, Product
+from qit import Range, Product, Function
 import qit
 
 def Qit():
@@ -39,7 +39,6 @@ def test_product_in_product():
     c = Qit()
     c.print_all(q)
 
-
 def test_random_product():
     p = Product("P")
     p.add("x", Range(2))
@@ -50,3 +49,10 @@ def test_random_product():
     q.add("p2", p)
     c = Qit()
     c.print_all(q.random().take(3))
+
+def test_map():
+    p = Product("P")
+    p.add("x", Range(4))
+    p.add("y", Range(4))
+    f = Function("f").takes(p, "p").returns(Range(4)).code("return p.x + p.y;")
+    Qit().print_all(p.take(6).map(f).take(4))

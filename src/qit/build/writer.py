@@ -9,6 +9,10 @@ class CppWriter(object):
     def line(self, string, *a, **kw):
         self.lines.append(self.indent + string.format(*a, **kw))
 
+    def text(self, text):
+        for line in text.split("\n"):
+            self.lines.append(self.indent + line)
+
     def emptyline(self):
         self.lines.append("")
 
