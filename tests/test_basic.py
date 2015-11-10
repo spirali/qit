@@ -50,5 +50,3 @@ def test_random_product():
     q.add("p2", p)
     c = Qit()
     c.print_all(q.random().take(3))
-
-

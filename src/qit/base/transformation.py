@@ -6,9 +6,17 @@ class Tranformation(Collection):
     def __init__(self, collection):
         self.collection = collection
 
-    @property
-    def parent_collections(self):
-        return (self.collection,)
+    def declare_iterator(self, builder):
+        self.collection.declare_iterator(builder)
+
+    def declare_generator(self, builder):
+        self.collection.declare_generator(builder)
+
+    def make_iterator(self, builder):
+        return builder.make_basic_iterator(self, (self.collection,))
+
+    def get_element_type(self, builder):
+        return self.collection.get_element_type(builder)
 
 
 class TakeTransformation(Tranformation):
@@ -20,19 +28,7 @@ class TakeTransformation(Tranformation):
     def get_iterator_type(self, builder):
         return builder.get_take_iterator(self)
 
-    def get_constructor_args(self, builder):
-        return builder.get_take_constructor_args(self)
-
-
-class RandomTranformation(Tranformation):
-
-    # Since we depend on generator
-    # we do not have to construct parent collections
-    parent_collections = ()
-
-    @property
-    def parent_generators(self):
-        return (self.collection,)
-
-    def get_iterator_type(self, builder):
-        return builder.get_generator_iterator(self)
+    def make_iterator(self, builder):
+        return builder.make_basic_iterator(self,
+                                           (self.collection,),
+                                           (str(self.count),))

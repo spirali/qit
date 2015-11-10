@@ -8,12 +8,13 @@ class CppBuilder(object):
     def __init__(self):
         self.writer = CppWriter()
         self.id_counter = 100
+        self.declaration_keys = set()
 
     def build_print_all(self, collection):
         self.write_header()
-        self.write_declaretions(collection)
+        collection.declare_iterator(self)
         self.main_begin()
-        iterator = self.make_iterator(collection)
+        iterator = collection.make_iterator(self)
         element = self.make_element(collection)
         self.writer.line("while ({}.next({}))", iterator, element)
         self.writer.block_begin()
@@ -21,11 +22,6 @@ class CppBuilder(object):
         self.writer.block_end()
         self.main_end()
         print(self.writer.get_string())
-
-    def write_declaretions(self, collection):
-        collections = collection.get_all_subcollections()
-        for c in collections:
-            c.declare(self)
 
     def write_header(self):
         self.writer.line("/*")
@@ -51,27 +47,25 @@ class CppBuilder(object):
         self.id_counter += 1
         return "{}{}".format(prefix, self.id_counter)
 
-    def make_generator(self, collection):
-        variables = []
-        for parent in collection.parent_collections:
-            variables.append(self.make_generator(parent))
-        for parent in collection.parent_generators:
-            variables.append(self.make_generator(parent))
-        args = tuple(variables) + collection.get_constructor_args(self)
-        variable = self.new_id("g")
-        self.writer.line("{} {}({});",
-                         collection.get_rgenerator_type(self),
-                         variable,
-                         ",".join(args))
+    def make_element(self, collection):
+        variable = self.new_id()
+        self.writer.line("{} {};",
+                         collection.get_element_type(self),
+                         variable)
         return variable
 
-    def make_iterator(self, collection):
-        variables = []
-        for parent in collection.parent_collections:
-            variables.append(self.make_iterator(parent))
-        for parent in collection.parent_generators:
-            variables.append(self.make_generator(parent))
-        args = tuple(variables) + collection.get_constructor_args(self)
+    ## Method for multiple dispatch of base classes
+
+    def get_generator_iterator(self, transformation):
+        return "qit::GeneratorIterator<{} >" \
+                .format(transformation.collection.get_generator_type(self))
+
+    def make_basic_iterator(self, collection, collections=(), args=()):
+        return self.make_iterator(collection,
+                                  tuple(c.make_iterator(self)
+                                     for c in collections) + args)
+
+    def make_iterator(self, collection, args):
         variable = self.new_id("i")
         self.writer.line("{} {}({});",
                          collection.get_iterator_type(self),
@@ -79,29 +73,36 @@ class CppBuilder(object):
                          ",".join(args))
         return variable
 
-    def make_element(self, collection):
-        variable = self.new_id()
-        self.writer.line("{} {};",
-                         self.get_element_type(collection),
-                         variable)
+    def make_basic_generator(self, collection, collections=(), args=()):
+        return self.make_generator(collection,
+                                  tuple(c.make_generator(self)
+                                     for c in collections) + args)
+
+    def make_generator(self, collection, args):
+        variable = self.new_id("g");
+        self.writer.line("{} {}({});",
+                         collection.get_generator_type(self),
+                         variable,
+                         ",".join(args))
         return variable
 
-    def get_element_type(self, collection):
-        iterator_type = collection.get_iterator_type(self)
-        return "{}::value_type".format(iterator_type)
 
-    ## Method for multiple dispatch of base classes
-
-    def get_generator_iterator(self, transformation):
-        return "qit::GeneratorIterator<{} >" \
-                .format(transformation.collection.get_rgenerator_type(self))
+    def check_declaration_key(self, key):
+        if key in self.declaration_keys:
+            return True
+        self.declaration_keys.add(key)
+        self.writer.line("/* Declaration: {} */", key)
+        return False
 
     # Range
+
+    def get_range_type(self):
+        return "qit::RangeIterator::value_type"
 
     def get_range_iterator(self):
         return "qit::RangeIterator"
 
-    def get_range_rgenerator(self):
+    def get_range_generator(self):
         return "qit::RangeGenerator"
 
     def get_range_constructor_args(self, range):
@@ -118,25 +119,25 @@ class CppBuilder(object):
 
     # Product
 
+    def get_product_type(self, product):
+        return product.name
+
     def get_product_iterator(self, product):
         return product.name + "Iterator"
 
-    def get_product_rgenerator(self, product):
+    def get_product_generator(self, product):
         return product.name + "Generator"
 
-    def declare_product(self, product):
-        self.declare_product_class(product)
-        self.declare_product_iterator(product)
-        self.declare_product_generator(product)
-
     def declare_product_class(self, product):
+        if self.check_declaration_key((product, "class")):
+            return
         self.writer.class_begin(product.name)
         self.writer.line("public:")
 
         ## Constructor
         for name, collection in product.items:
             self.writer.line("{} {};",
-                             self.get_element_type(collection),
+                             collection.get_element_type(self),
                              name)
         self.writer.class_end()
 
@@ -153,6 +154,9 @@ class CppBuilder(object):
         self.writer.block_end()
 
     def declare_product_iterator(self, product):
+        if self.check_declaration_key((product, "iterator")):
+            return
+
         iterator_name = product.get_iterator_type(self)
         self.writer.class_begin(iterator_name)
         self.writer.line("public:")
@@ -160,7 +164,7 @@ class CppBuilder(object):
 
         # Attributes
         for name, collection in product.items:
-            self.writer.line("{} {};",
+            self.writer.line("{} &{};",
                              collection.get_iterator_type(self),
                              name)
         self.writer.line("bool _inited;")
@@ -211,19 +215,22 @@ class CppBuilder(object):
 
 
     def declare_product_generator(self, product):
-        generator_name = product.get_rgenerator_type(self)
+        if self.check_declaration_key((product, "generator")):
+            return
+
+        generator_name = product.get_generator_type(self)
         self.writer.class_begin(generator_name)
         self.writer.line("public:")
         self.writer.line("typedef {} value_type;", product.name)
 
         # Attributes
         for name, collection in product.items:
-            self.writer.line("{} {};",
-                             collection.get_rgenerator_type(self),
+            self.writer.line("{} &{};",
+                             collection.get_generator_type(self),
                              name)
 
         # Contructor
-        args = [ "{} &{}".format(c.get_rgenerator_type(self), name)
+        args = [ "{} &{}".format(c.get_generator_type(self), name)
                  for name, c in product.items ]
         constructors = [ "{0}({0})".format(name) for name in product.names ]
         self.writer.line("{}({}) {} {}",
@@ -239,11 +246,6 @@ class CppBuilder(object):
         self.writer.block_begin()
         for name in product.names:
             self.writer.line("{0}.generate(v.{0});", name)
-        self.writer.block_end()
-
-        # Reset
-        self.writer.line("void reset()")
-        self.writer.block_begin()
         self.writer.block_end()
 
         self.writer.class_end()
