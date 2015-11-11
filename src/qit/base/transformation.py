@@ -1,14 +1,18 @@
 
-from qit.base.collection import Collection
+from qit.base.iterator import Iterator
 
 
-class Transformation(Collection):
+class Transformation(Iterator):
 
     def __init__(self, collection):
         self.collection = collection
 
-    def declare_iterator(self, builder):
-        self.collection.declare_iterator(builder)
+    @property
+    def output_type(self):
+        return self.collection.output_type
+
+    def declare(self, builder):
+        self.collection.declare(builder)
 
     def make_iterator(self, builder):
         return builder.make_basic_iterator(self, (self.collection,))
@@ -40,9 +44,13 @@ class MapTransformation(Transformation):
         assert function.return_type is not None
         # TODO: Check compatability of function and valid return type
 
-    def declare_iterator(self, builder):
-        self.collection.declare_iterator(builder)
-        self.function.return_type.declare_element(builder)
+    @property
+    def output_type(self):
+        return self.function.return_type
+
+    def declare(self, builder):
+        self.collection.declare(builder)
+        self.function.return_type.declare(builder)
         self.function.declare(builder)
 
     def get_iterator_type(self, builder):

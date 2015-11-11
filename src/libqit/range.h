@@ -6,8 +6,8 @@ namespace qit {
 
 class RangeIterator {
 	public:
-		typedef unsigned int value_type;
-		RangeIterator(value_type stop) 
+		typedef int value_type;
+		RangeIterator(value_type stop)
 			: stop(stop), value(0) {}
 
 		bool next(value_type &out) {
@@ -29,8 +29,8 @@ class RangeIterator {
 
 class RangeGenerator {
 	public:
-		typedef unsigned int value_type;
-		RangeGenerator(value_type stop) 
+		typedef int value_type;
+		RangeGenerator(value_type stop)
 			: stop(stop) {}
 
 		void generate(value_type &out) {
