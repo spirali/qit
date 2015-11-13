@@ -68,3 +68,20 @@ def test_product_derive():
     result = c.run(q2.iterate().collect())
     assert len(v_q2_iterator) == len(result)
     assert v_q2_iterator == set(result)
+
+def test_product_big():
+    R2 = Range(2)
+    R3 = Range(3)
+    P = R3 * R2 * R3 * R3 * R2 * R2 * R3
+
+    r2 = list(range(2))
+    r3 = list(range(3))
+    p = set(itertools.product(r3, r2, r3, r3, r2, r2, r3))
+
+    result = Qit().run(P.iterate().collect())
+    assert len(result) == len(p)
+    assert set(result) == p
+
+    result = Qit().run(P.generate().take(1000).collect())
+    for v in result:
+        assert v in p
