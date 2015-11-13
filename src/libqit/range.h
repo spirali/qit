@@ -41,6 +41,16 @@ class RangeGenerator {
 		value_type stop;
 };
 
+template<typename T> void write(FILE *out, T value)
+{
+    value.write(out);
+}
+
+template<> void write<int>(FILE *out, int value)
+{
+    fwrite(&value, sizeof(int), 1, out);
+}
+
 }
 
 #endif // QIT_RANGE_H

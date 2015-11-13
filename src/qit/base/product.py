@@ -39,7 +39,7 @@ class Product(BasicType):
                 self, [self.get_generator(name) for name in self.names])
 
     def __mul__(self, other):
-        return Product(self.name,
+        return Product(None,
                        *(tuple(zip(self.types, self.names)) + (other,)))
 
     def set(self, name, type):
@@ -73,6 +73,20 @@ class Product(BasicType):
 
     def derive(self):
         return DerivedProduct(self)
+
+    def read(self, f):
+        if not self.items:
+            return ()
+        lst = []
+        for name, type in self.items:
+            element = type.basic_type.read(f)
+            if element is None:
+                if not lst:
+                    return None # First element
+                else:
+                    raise Exception("Incomplete product")
+            lst.append(element)
+        return tuple(lst)
 
 
 class DerivedProduct(DerivedType):

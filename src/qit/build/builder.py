@@ -20,24 +20,41 @@ class CppBuilder(object):
         self.autonames.append((key, name))
         return name
 
-    def build_print_all(self, collection):
+    def build_print_all(self, iterator):
         self.write_header()
-        collection.declare(self)
+        iterator.declare(self)
         self.main_begin()
-        iterator = collection.make_iterator(self)
-        element = self.make_element(collection.output_type.basic_type)
-        self.writer.line("while ({}.next({}))", iterator, element)
+        variable = iterator.make_iterator(self)
+        element = self.make_element(iterator.output_type.basic_type)
+        self.writer.line("while ({}.next({}))", variable, element)
         self.writer.block_begin()
         self.writer.line("std::cout << {} << std::endl;", element)
         self.writer.block_end()
         self.main_end()
-        print(self.writer.get_string())
+
+    def build_collect(self, iterator):
+        self.write_header()
+        iterator.declare(self)
+        self.main_begin()
+        variable = iterator.make_iterator(self)
+        element = self.make_element(iterator.output_type.basic_type)
+        self.init_fifo()
+        self.writer.line("while ({}.next({}))", variable, element)
+        self.writer.block_begin()
+        self.writer.line("qit::write(output, {});", element)
+        self.writer.block_end()
+        self.main_end()
+
+    def init_fifo(self):
+        self.writer.line("assert(argc > 1);")
+        self.writer.line("FILE *output = fopen(argv[1], \"w\");")
 
     def write_header(self):
         self.writer.line("/*")
         self.writer.line("       QIT generated file")
         self.writer.line("*/")
         self.writer.emptyline()
+        self.writer.line("#include <assert.h>")
         self.writer.line("#include <iostream>")
         self.writer.line("#include <qit.h>")
         self.writer.line("#include <stdlib.h>")
@@ -45,7 +62,7 @@ class CppBuilder(object):
         self.writer.emptyline()
 
     def main_begin(self):
-        self.writer.line("int main()")
+        self.writer.line("int main(int argc, char **argv)")
         self.writer.block_begin()
         self.writer.line("srand(time(NULL));")
 
@@ -70,28 +87,28 @@ class CppBuilder(object):
         return "qit::GeneratorIterator<{} >" \
                 .format(transformation.generator.get_generator_type(self))
 
-    def make_basic_iterator(self, collection, collections=(), args=()):
-        return self.make_iterator(collection,
+    def make_basic_iterator(self, iterator, iterators=(), args=()):
+        return self.make_iterator(iterator,
                                   tuple(c.make_iterator(self)
-                                     for c in collections) + args)
+                                     for c in iterators) + args)
 
-    def make_iterator(self, collection, args):
+    def make_iterator(self, iterator, args):
         variable = self.new_id("i")
         self.writer.line("{} {}({});",
-                         collection.get_iterator_type(self),
+                         iterator.get_iterator_type(self),
                          variable,
                          ",".join(args))
         return variable
 
-    def make_basic_generator(self, collection, collections=(), args=()):
-        return self.make_generator(collection,
+    def make_basic_generator(self, iterator, iterators=(), args=()):
+        return self.make_generator(iterator,
                                   tuple(c.make_generator(self)
-                                     for c in collections) + args)
+                                     for c in iterators) + args)
 
-    def make_generator(self, collection, args):
+    def make_generator(self, iterator, args):
         variable = self.new_id("g");
         self.writer.line("{} {}({});",
-                         collection.get_generator_type(self),
+                         iterator.get_generator_type(self),
                          variable,
                          ",".join(args))
         return variable
@@ -121,13 +138,13 @@ class CppBuilder(object):
 
     def get_take_iterator(self, take):
         return "qit::TakeIterator<{} >" \
-                .format(take.collection.get_iterator_type(self))
+                .format(take.parent_iterator.get_iterator_type(self))
 
     # Map
 
     def get_map_iterator(self, map):
         return "qit::MapIterator<{}, {}, {} >" \
-                .format(map.collection.get_iterator_type(self),
+                .format(map.parent_iterator.get_iterator_type(self),
                         map.function.return_type.get_element_type(self),
                         map.function.name)
 
@@ -160,6 +177,14 @@ class CppBuilder(object):
             self.writer.line("{} {};",
                              t.basic_type.get_element_type(self),
                              name)
+
+        # Write
+        self.writer.line("void write(FILE *f)")
+        self.writer.block_begin()
+        for name in product.names:
+            self.writer.line("qit::write(f, {});", name)
+        self.writer.block_end()
+
         self.writer.class_end()
 
         ## Stream
@@ -173,6 +198,7 @@ class CppBuilder(object):
             self.writer.line("os << v.{};", name)
         self.writer.line("return os << \"}}\";")
         self.writer.block_end()
+
 
     def declare_product_iterator(self, iterator):
         if self.check_declaration_key((iterator, "iterator")):
@@ -234,7 +260,9 @@ class CppBuilder(object):
         self.writer.line("void reset()")
         self.writer.block_begin()
         for name in product.names:
+            self.writer.line("_inited = false;")
             self.writer.line("{}.reset();", name)
+
         self.writer.block_end()
 
         self.writer.class_end()

@@ -3,6 +3,8 @@ from qit.base.iterator import Iterator
 from qit.base.generator import GeneratorIterator
 from qit.utils.eqmixin import EqMixin
 
+
+
 class Type(EqMixin):
 
     def declare_element(self, builder):
@@ -16,6 +18,14 @@ class Type(EqMixin):
 
     def declare(self, builder):
         pass
+
+    def read_all(self, f):
+        while True:
+            obj = self.read(f)
+            if obj is not None:
+                yield obj
+            else:
+                break
 
     def __mul__(self, other):
         return Product(None, self, other)

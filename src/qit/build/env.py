@@ -19,10 +19,15 @@ class CppEnv(object):
                           "-march=native",
                           "-I", paths.LIBQIT_DIR)
 
-    def run_print_all(self, collection):
+    def run_print_all(self, iterator):
         builder = CppBuilder()
-        builder.build_print_all(collection)
-        self.compile_builder(builder)
+        builder.build_print_all(iterator)
+        self.compile_builder(builder, None)
+
+    def run_collect(self, iterator):
+        builder = CppBuilder()
+        builder.build_collect(iterator)
+        return self.compile_builder(builder, iterator.output_type.basic_type)
 
     def get_file(self):
         makedir_if_not_exists(self.build_dir)
@@ -38,7 +43,7 @@ class CppEnv(object):
                       delete=False)
 
 
-    def compile_builder(self, builder):
+    def compile_builder(self, builder, type):
         text = builder.writer.get_string()
         makedir_if_not_exists(self.build_dir)
         with self.get_file() as f:
@@ -47,8 +52,28 @@ class CppEnv(object):
             f.write(text)
         exe_filename = filename[:-4]
         args = (self.compiler, "-o", exe_filename, filename) + self.cpp_flags
-        print("Running: " + " ".join(args))
         subprocess.check_call(args)
-        args = (exe_filename,)
-        print("Running: " + " ".join(args))
-        subprocess.check_call(args)
+        if type:
+            fifo_name = exe_filename + "-fifo"
+        else:
+            fifo_name = None
+        return self.run_program(exe_filename, fifo_name, type)
+
+    def run_program(self, exe_filename, fifo_name, type):
+        if fifo_name:
+            os.mkfifo(fifo_name)
+            try:
+                args = (exe_filename, fifo_name,)
+                print("Running: " + " ".join(args))
+                popen = subprocess.Popen(args)
+                with open(fifo_name, "rb") as f:
+                    result = list(type.read_all(f))
+                popen.wait()
+                return result
+            finally:
+                os.unlink(fifo_name)
+        else:
+            args = (exe_filename,)
+            print("Running: " + " ".join(args))
+            subprocess.check_call(args)
+
