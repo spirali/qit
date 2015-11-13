@@ -7,8 +7,5 @@ class Qit:
         self.debug = debug
         self.env = CppEnv(self)
 
-    def print_all(self, iterator):
-        return self.env.run_print_all(iterator)
-
-    def collect(self, iterator):
-        return self.env.run_collect(iterator)
+    def run(self, action):
+        return action.run(self.env)

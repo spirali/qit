@@ -9,7 +9,7 @@ def test_product_iterate():
     r = list(range(3))
     pairs = set(itertools.product(r, r))
     c = Qit()
-    result = c.collect(p.iterate())
+    result = c.run(p.iterate().collect())
     assert len(result) == len(pairs)
     assert set(result) == pairs
 
@@ -22,7 +22,7 @@ def test_product_in_product():
     q_all = set(itertools.product(p_all, p_all))
 
     c = Qit()
-    result = c.collect(q.iterate())
+    result = c.run(q.iterate().collect())
     assert set(result) == q_all
     assert len(result) == len(q_all)
 
@@ -30,7 +30,7 @@ def test_random_product():
     p = Product("P", (Range(2), "x"), (Range(2), "y"))
     q = Product("Q", (p, "p1"), (p, "p2"))
     c = Qit()
-    result = c.collect(q.generate().take(100))
+    result = c.run(q.generate().take(100).collect())
     assert len(result) == 100
     for ((a, b), (c, d)) in result:
         assert a >= 0 and a < 2
@@ -40,7 +40,7 @@ def test_random_product():
 
 def test_product_no_name():
     p = Product(None, Range(2), Range(3))
-    Qit().print_all(p.iterate())
+    Qit().run(p.iterate().print_all())
 
 def test_product_derive():
     p = Product("P", (Range(4), "x"), (Range(4), "y"))
@@ -62,9 +62,9 @@ def test_product_derive():
     v_q2_iterator = set(itertools.product(v_p2, v_p))
 
     c = Qit()
-    for v in c.collect(q2.generate().take(200)):
+    for v in c.run(q2.generate().take(200).collect()):
         assert v in v_q2_generator
 
-    result = c.collect(q2.iterate())
+    result = c.run(q2.iterate().collect())
     assert len(v_q2_iterator) == len(result)
     assert v_q2_iterator == set(result)
