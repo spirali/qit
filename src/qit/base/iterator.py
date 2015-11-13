@@ -1,5 +1,7 @@
 
-class Iterator:
+from qit.utils.eqmixin import EqMixin
+
+class Iterator(EqMixin):
 
     def take(self, count):
         return TakeTransformation(self, count)

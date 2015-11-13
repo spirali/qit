@@ -4,11 +4,17 @@ from qit.base.generator import Generator
 
 class Product(BasicType):
 
-    def __init__(self, name):
+    def __init__(self, name=None, *args):
         self.name = name
         self.items = []
         self.generators = {}
         self.iterators = {}
+
+        for arg in args:
+            if isinstance(arg, tuple) and len(arg) == 2:
+                self._add(arg[0], arg[1])
+            else:
+                self._add(arg)
 
     @property
     def names(self):
@@ -51,7 +57,9 @@ class Product(BasicType):
     def get_element_type(self, builder):
         return builder.get_product_type(self)
 
-    def add(self, name, collection):
+    def _add(self, collection, name=None):
+        if name is None:
+            name = "_v{}".format(len(self.items))
         self.items.append((name, collection))
         self.iterators[name] = collection.iterator
         self.generators[name] = collection.generator

@@ -1,8 +1,9 @@
 
 from qit.base.iterator import Iterator
 from qit.base.generator import GeneratorIterator
+from qit.utils.eqmixin import EqMixin
 
-class Type:
+class Type(EqMixin):
 
     def declare_element(self, builder):
         pass

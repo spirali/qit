@@ -9,7 +9,16 @@ class CppBuilder(object):
     def __init__(self):
         self.writer = CppWriter()
         self.id_counter = 100
-        self.declaration_keys = set()
+        self.declaration_keys = []
+        self.autonames = []
+
+    def get_autoname(self, key, prefix):
+        for k, name in self.autonames:
+            if key == k:
+                return name
+        name = self.new_id(prefix)
+        self.autonames.append((key, name))
+        return name
 
     def build_print_all(self, collection):
         self.write_header()
@@ -91,7 +100,7 @@ class CppBuilder(object):
     def check_declaration_key(self, key):
         if key in self.declaration_keys:
             return True
-        self.declaration_keys.add(key)
+        self.declaration_keys.append(key)
         self.writer.line("/* Declaration: {} */", key)
         return False
 
@@ -126,18 +135,24 @@ class CppBuilder(object):
     # Product
 
     def get_product_type(self, product):
-        return product.name
+        if product.name is None:
+            return self.get_autoname(product, "Product")
+        else:
+            return product.name
 
     def get_product_iterator(self, iterator):
-        return iterator.output_type.name + "Iterator" + str(id(iterator))
+        type_name = self.get_product_type(iterator.output_type)
+        return self.get_autoname(iterator, type_name + "Iterator")
 
     def get_product_generator(self, generator):
-        return generator.output_type.name + "Generator" + str(id(generator))
+        type_name = self.get_product_type(generator.output_type)
+        return self.get_autoname(generator, type_name + "Generator")
 
     def declare_product_class(self, product):
         if self.check_declaration_key((product, "class")):
             return
-        self.writer.class_begin(product.name)
+        product_type = self.get_product_type(product)
+        self.writer.class_begin(product_type)
         self.writer.line("public:")
 
         ## Constructor
@@ -149,7 +164,7 @@ class CppBuilder(object):
 
         ## Stream
         self.writer.line("std::ostream& operator<<(std::ostream& os, const {}& v)",
-                  product.name)
+                  product_type)
         self.writer.block_begin()
         self.writer.line("os << \"{{\";")
         for i, name in enumerate(product.names):

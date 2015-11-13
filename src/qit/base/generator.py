@@ -1,10 +1,12 @@
 
 from qit.base.iterator import Iterator
+from qit.utils.eqmixin import EqMixin
 
-class Generator:
+class Generator(EqMixin):
 
     def declare(self, builder):
         pass
+
 
 class GeneratorIterator(Iterator):
 
