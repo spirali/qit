@@ -38,6 +38,10 @@ class Product(BasicType):
         return ProductGenerator(
                 self, [self.get_generator(name) for name in self.names])
 
+    def __mul__(self, other):
+        return Product(self.name,
+                       *(tuple(zip(self.types, self.names)) + (other,)))
+
     def set(self, name, type):
         self.set_generator(name, type.generator)
         self.set_iterator(name, type.iterator)

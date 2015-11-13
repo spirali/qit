@@ -17,6 +17,9 @@ class Type(EqMixin):
     def declare(self, builder):
         pass
 
+    def __mul__(self, other):
+        return Product(None, self, other)
+
 
 class BasicType(Type):
 
@@ -43,3 +46,7 @@ class DerivedType(Type):
 
 class TypeIterator(Iterator):
     pass
+
+
+# To break import cycle
+from qit.base.product import Product
