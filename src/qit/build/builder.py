@@ -152,8 +152,8 @@ class CppBuilder(object):
     # Product
 
     def get_product_type(self, product):
-        if product.name is None:
-            return self.get_autoname(product, "Product")
+        if product.basic_type.name is None:
+            return self.get_autoname(product.basic_type, "Product")
         else:
             return product.name
 
@@ -173,7 +173,7 @@ class CppBuilder(object):
         self.writer.line("public:")
 
         ## Constructor
-        for name, t in product.items:
+        for name, t in zip(product.names, product.types):
             self.writer.line("{} {};",
                              t.basic_type.get_element_type(self),
                              name)
@@ -242,7 +242,7 @@ class CppBuilder(object):
             self.writer.if_begin("{0}.next(v.{0})", name)
             self.writer.line("return true;")
             self.writer.block_end()
-            if i != len(product.items) - 1:
+            if i != len(product.names) - 1:
                 self.writer.line("{}.reset();", name)
                 self.writer.line("{0}.next(v.{0});", name)
         self.writer.line("return false;")

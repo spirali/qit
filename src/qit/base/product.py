@@ -1,32 +1,38 @@
 
-from qit.base.type import BasicType, DerivedType, TypeIterator
+from qit.base.type import Type, TypeIterator
 from qit.base.generator import Generator
 
-class Product(BasicType):
+class Product(Type):
 
     def __init__(self, name=None, *args):
-        self.name = name
-        self.items = []
-        self.generators = {}
-        self.iterators = {}
+        names = []
+        types = []
 
         for arg in args:
             if isinstance(arg, tuple) and len(arg) == 2:
-                self._add(arg[0], arg[1])
+                types.append(arg[0])
+                names.append(arg[1])
             else:
-                self._add(arg)
+                types.append(arg)
+                names.append("_v{}".format(len(names)))
 
-    @property
-    def names(self):
-        return tuple(name for name, t in self.items)
+        if all(t.is_basic_type() for t in types):
+            super().__init__()
+        else:
+            basic_types = [ t.basic_type for t in types ]
+            super().__init__(Product(name, *(zip(basic_types, names))))
 
-    @property
-    def types(self):
-        return tuple(t for name, t in self.items)
+        assert len(set(names)) == len(names)
+
+        self.name = name
+        self.names = names
+        self.types = types
+        self.generators = [ None ] * len(names)
+        self.iterators = [ None ] * len(names)
 
     @property
     def basic_types(self):
-        return tuple(t.basic_type for name, t in self.items)
+        return tuple(t.basic_type for t in self.types)
 
     @property
     def iterator(self):
@@ -43,43 +49,51 @@ class Product(BasicType):
                        *(tuple(zip(self.types, self.names)) + (other,)))
 
     def set(self, name, type):
-        self.set_generator(name, type.generator)
-        self.set_iterator(name, type.iterator)
-
-    def get_generator(self, name):
-        return self.generators[name]
+        index = self.names.index(name)
+        self.types[index] = type
 
     def get_iterator(self, name):
-        return self.iterators[name]
+        index = self.names.index(name)
+        iterator = self.iterators[index]
+        if iterator is not None:
+            return iterator
+        else:
+            return self.types[index].iterator
+
+    def get_generator(self, name):
+        index = self.names.index(name)
+        iterator = self.generators[index]
+        if iterator is not None:
+            return iterator
+        else:
+            return self.types[index].generator
 
     def set_generator(self, name, generator):
-        self.generators[name] = generator
+        index = self.names.index(name)
+        self.generators[index] = generator
 
     def set_iterator(self, name, iterator):
-        self.iterator[name] = iterator
+        index = self.names.index(name)
+        self.iterators[index] = iterator
 
     def get_element_type(self, builder):
         return builder.get_product_type(self)
 
-    def _add(self, collection, name=None):
-        if name is None:
-            name = "_v{}".format(len(self.items))
-        self.items.append((name, collection))
-        self.iterators[name] = collection.iterator
-        self.generators[name] = collection.generator
-
     def declare(self, builder):
-        builder.declare_product_class(self)
+        if self.parent_type:
+            self.parent_type.declare(builder)
+        else:
+            builder.declare_product_class(self)
 
     def derive(self):
-        return DerivedProduct(self)
+        return Product(self.name, *zip(self.types, self.names))
 
     def read(self, f):
-        if not self.items:
+        if not self.names:
             return ()
         lst = []
-        for name, type in self.items:
-            element = type.basic_type.read(f)
+        for t in self.types:
+            element = t.basic_type.read(f)
             if element is None:
                 if not lst:
                     return None # First element
@@ -88,7 +102,7 @@ class Product(BasicType):
             lst.append(element)
         return tuple(lst)
 
-
+"""
 class DerivedProduct(DerivedType):
 
     def __init__(self, product):
@@ -129,7 +143,7 @@ class DerivedProduct(DerivedType):
     def generator(self):
         return ProductGenerator(
                 self.basic_type, [self.get_generator(name) for name in self.basic_type.names])
-
+"""
 
 class ProductIterator(TypeIterator):
 

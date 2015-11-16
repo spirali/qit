@@ -1,8 +1,8 @@
 
-from qit.base.type import BasicType
+from qit.base.type import Type
 import struct
 
-class Int(BasicType):
+class Int(Type):
 
     struct = struct.Struct('i')
     size = struct.size
