@@ -216,7 +216,7 @@ class CppBuilder(object):
 
         # Attributes
         for name, i in names_iterators:
-            self.writer.line("{} &{};",
+            self.writer.line("{} {};",
                              i.get_iterator_type(self),
                              name)
         self.writer.line("bool _inited;")
@@ -259,8 +259,8 @@ class CppBuilder(object):
         # Reset
         self.writer.line("void reset()")
         self.writer.block_begin()
+        self.writer.line("_inited = false;")
         for name in product.names:
-            self.writer.line("_inited = false;")
             self.writer.line("{}.reset();", name)
 
         self.writer.block_end()
@@ -282,7 +282,7 @@ class CppBuilder(object):
         # Attributes
         names_generators = list(zip(product.names, generator.generators))
         for name, generator in names_generators:
-            self.writer.line("{} &{};",
+            self.writer.line("{} {};",
                              generator.get_generator_type(self),
                              name)
 
@@ -306,6 +306,20 @@ class CppBuilder(object):
         self.writer.block_end()
 
         self.writer.class_end()
+
+    # Sequences
+
+    def get_sequence_iterator(self, iterator):
+        return "qit::SequenceIterator<{} >".format(
+            iterator.element_iterator.get_iterator_type(self))
+
+    def get_sequence_generator(self, iterator):
+        return "qit::SequenceGenerator<{} >".format(
+            iterator.element_generator.get_generator_type(self))
+
+    def get_sequence_type(self, sequence):
+        return "std::vector<{} >".format(
+            sequence.element_type.get_element_type(self))
 
     # Function
 

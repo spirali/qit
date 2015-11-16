@@ -10,7 +10,7 @@ class Iterator(EqMixin):
         return MapTransformation(self, function)
 
     def declare(self, builder):
-        pass
+        self.output_type.declare(builder)
 
     def make_iterator(self, builder):
         return builder.make_iterator(self, ())

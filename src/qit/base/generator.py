@@ -5,7 +5,7 @@ from qit.utils.eqmixin import EqMixin
 class Generator(EqMixin):
 
     def declare(self, builder):
-        pass
+        self.output_type.declare(builder)
 
 
 class GeneratorIterator(Iterator):

@@ -4,14 +4,14 @@ import struct
 
 class Int(Type):
 
-    struct = struct.Struct('i')
-    size = struct.size
+    struct = struct.Struct('<i')
+    struct_size = struct.size
 
     def get_element_type(self, builder):
         return builder.get_int_type()
 
     def read(self, f):
-        data = f.read(self.size)
+        data = f.read(self.struct_size)
         if not data:
             return None
         return self.struct.unpack(data)[0]

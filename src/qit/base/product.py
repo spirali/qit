@@ -102,48 +102,6 @@ class Product(Type):
             lst.append(element)
         return tuple(lst)
 
-"""
-class DerivedProduct(DerivedType):
-
-    def __init__(self, product):
-        super().__init__(product)
-        self.generators = {}
-        self.iterators = {}
-
-    def get_generator(self, name):
-        generator = self.generators.get(name)
-        if generator:
-            return generator
-        else:
-            return self.parent_type.get_generator(name)
-
-    def get_iterator(self, name):
-        iterator = self.iterators.get(name)
-        if iterator:
-            return iterator
-        else:
-            return self.parent_type.get_iterator(name)
-
-    def set(self, name, type):
-        self.set_generator(name, type.generator)
-        self.set_iterator(name, type.iterator)
-
-    def set_generator(self, name, generator):
-        self.generators[name] = generator
-
-    def set_iterator(self, name, iterator):
-        self.iterators[name] = iterator
-
-    @property
-    def iterator(self):
-        return ProductIterator(
-                self.basic_type, [self.get_iterator(name) for name in self.basic_type.names])
-
-    @property
-    def generator(self):
-        return ProductGenerator(
-                self.basic_type, [self.get_generator(name) for name in self.basic_type.names])
-"""
 
 class ProductIterator(TypeIterator):
 
@@ -160,7 +118,7 @@ class ProductIterator(TypeIterator):
     def declare(self, builder):
         for iterator in self.iterators:
             iterator.declare(builder)
-        self.output_type.declare(builder)
+        super().declare(builder)
         builder.declare_product_iterator(self)
 
 
@@ -179,5 +137,5 @@ class ProductGenerator(Generator):
     def declare(self, builder):
         for iterator in self.generators:
             iterator.declare(builder)
-        self.output_type.declare(builder)
+        super().declare(builder)
         builder.declare_product_generator(self)
