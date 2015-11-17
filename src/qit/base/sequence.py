@@ -3,6 +3,7 @@ from qit.base.iterator import Iterator
 from qit.base.generator import Generator
 import struct
 
+
 class Sequence(Type):
 
     struct = struct.Struct('<Q')
@@ -26,6 +27,12 @@ class Sequence(Type):
             return None
         size = self.struct.unpack(data)[0]
         return [ self.element_type.read(f) for i in range(size) ]
+
+    def make_instance(self, builder, value):
+        return builder.make_sequence_instance(self, value)
+
+    def declare(self, builder):
+        self.element_type.declare(builder)
 
     @property
     def iterator(self):
@@ -84,5 +91,3 @@ class SequenceGenerator(Generator):
     def declare(self, builder):
         self.output_type.element_type.generator.declare(builder)
         super().declare(builder)
-
-

@@ -36,9 +36,9 @@ class CppBuilder(object):
         self.write_header()
         iterator.declare(self)
         self.main_begin()
+        self.init_fifo()
         variable = iterator.make_iterator(self)
         element = self.make_element(iterator.output_type.basic_type)
-        self.init_fifo()
         self.writer.line("while ({}.next({}))", variable, element)
         self.writer.block_begin()
         self.writer.line("qit::write(output, {});", element)
@@ -94,10 +94,15 @@ class CppBuilder(object):
 
     def make_iterator(self, iterator, args):
         variable = self.new_id("i")
-        self.writer.line("{} {}({});",
-                         iterator.get_iterator_type(self),
-                         variable,
-                         ",".join(args))
+        if args:
+            self.writer.line("{} {}({});",
+                             iterator.get_iterator_type(self),
+                             variable,
+                             ",".join(args))
+        else:
+            self.writer.line("{} {};",
+                             iterator.get_iterator_type(self),
+                             variable)
         return variable
 
     def make_basic_generator(self, iterator, iterators=(), args=()):
@@ -107,10 +112,15 @@ class CppBuilder(object):
 
     def make_generator(self, iterator, args):
         variable = self.new_id("g");
-        self.writer.line("{} {}({});",
-                         iterator.get_generator_type(self),
-                         variable,
-                         ",".join(args))
+        if args:
+            self.writer.line("{} {}({});",
+                             iterator.get_generator_type(self),
+                             variable,
+                             ",".join(args))
+        else:
+            self.writer.line("{} {};",
+                             iterator.get_generator_type(self),
+                             variable)
         return variable
 
 
@@ -125,6 +135,10 @@ class CppBuilder(object):
 
     def get_int_type(self):
         return "int"
+
+    def make_int_instance(self, value):
+        assert isinstance(value, int)
+        return str(value)
 
     # Range
 
@@ -151,6 +165,12 @@ class CppBuilder(object):
 
     # Product
 
+    def make_product_instance(self, product, value):
+        assert len(value) == len(product.names)
+        args = ",".join(t.make_instance(self, v)
+                        for t, v in zip(product.basic_types, value))
+        return "{}({})".format(self.get_product_type(product), args)
+
     def get_product_type(self, product):
         if product.basic_type.name is None:
             return self.get_autoname(product.basic_type, "Product")
@@ -172,11 +192,20 @@ class CppBuilder(object):
         self.writer.class_begin(product_type)
         self.writer.line("public:")
 
-        ## Constructor
+        ## Attributes
         for name, t in zip(product.names, product.types):
             self.writer.line("{} {};",
                              t.basic_type.get_element_type(self),
                              name)
+
+        args = ",".join("const {} &{}".format(t.get_element_type(self), name)
+                        for t, name in zip(product.basic_types, product.names))
+
+        consts = ",".join("{0}({0})".format(name)
+                        for name in product.names)
+
+        self.writer.line("{}({}) : {} {{}}", product_type, args, consts)
+        self.writer.line("{}() {{}}", product_type)
 
         # Write
         self.writer.line("void write(FILE *f)")
@@ -309,6 +338,11 @@ class CppBuilder(object):
 
     # Sequences
 
+    def make_sequence_instance(self, sequence, value):
+        basic_type = sequence.element_type.basic_type
+        args = ",".join(basic_type.make_instance(self, v) for v in value)
+        return "{{ {} }}".format(args)
+
     def get_sequence_iterator(self, iterator):
         return "qit::SequenceIterator<{} >".format(
             iterator.element_iterator.get_iterator_type(self))
@@ -337,3 +371,67 @@ class CppBuilder(object):
 
         self.writer.class_end()
 
+    # Values
+
+    def get_values_iterator_type(self, iterator):
+        return self.get_autoname(iterator, "ValuesIterator")
+
+    def get_values_generator_type(self, iterator):
+        return self.get_autoname(iterator, "ValuesGenerator")
+
+    def declare_values_iterator(self, iterator):
+        output_type = iterator.output_type
+        iterator_type = self.get_values_iterator_type(iterator)
+        element_type = output_type.get_element_type(self)
+        self.writer.class_begin(iterator_type)
+        self.writer.line("public:")
+        self.writer.line("typedef {} value_type;", element_type)
+        self.writer.line("{}() : counter(0) {{}}", iterator_type)
+
+        self.writer.line("bool next(value_type &out)")
+        self.writer.block_begin()
+        self.writer.line("switch(counter)")
+        self.writer.block_begin()
+        for i, value in enumerate(iterator.values):
+            self.writer.line("case {}:", i)
+            self.writer.line("out = {};",
+                             output_type.make_instance(self, value))
+            self.writer.line("counter++;")
+            self.writer.line("return true;")
+        self.writer.line("default:")
+        self.writer.line("return false;")
+        self.writer.block_end()
+        self.writer.block_end()
+
+        self.writer.line("void reset()")
+        self.writer.block_begin()
+        self.writer.line("counter = 0;")
+        self.writer.block_end()
+
+        self.writer.line("protected:")
+        self.writer.line("int counter;")
+        self.writer.class_end()
+
+    def declare_values_generator(self, generator):
+        output_type = generator.output_type
+        generator_type = self.get_values_generator_type(generator)
+        element_type = output_type.get_element_type(self)
+        self.writer.class_begin(generator_type)
+        self.writer.line("public:")
+        self.writer.line("typedef {} value_type;", element_type)
+
+        self.writer.line("void generate(value_type &out)")
+        self.writer.block_begin()
+        self.writer.line("switch(rand() % {})", len(generator.values))
+        self.writer.block_begin()
+        for i, value in enumerate(generator.values):
+            self.writer.line("case {}:", i)
+            self.writer.line("out = {};",
+                             output_type.make_instance(self, value))
+            self.writer.line("return;")
+        self.writer.line("default:")
+        self.writer.line("assert(0);")
+        self.writer.block_end()
+        self.writer.block_end()
+
+        self.writer.class_end()

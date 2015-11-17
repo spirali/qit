@@ -7,6 +7,9 @@ class Generator(EqMixin):
     def declare(self, builder):
         self.output_type.declare(builder)
 
+    def make_generator(self, builder):
+        return builder.make_generator(self, ())
+
 
 class GeneratorIterator(Iterator):
 
