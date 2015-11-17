@@ -3,25 +3,15 @@ from qit.base.iterator import Iterator
 from qit.base.generator import GeneratorIterator
 from qit.utils.eqmixin import EqMixin
 
-
+from copy import copy
 
 class Type(EqMixin):
 
-    def __init__(self, parent_type=None):
-        self.parent_type = parent_type
+    def __init__(self):
+        pass
 
     def is_basic_type(self):
-        return self.parent_type is None
-
-    @property
-    def basic_type(self):
-        if self.parent_type:
-            return self.parent_type
-        else:
-            return self
-
-    def get_element_type(self, builder):
-        return self.parent_type.get_element_type(builder)
+        return self == self.basic_type
 
     def iterate(self):
         return self.iterator
@@ -30,8 +20,7 @@ class Type(EqMixin):
         return GeneratorIterator(self.generator)
 
     def declare(self, builder):
-        if self.parent_type:
-            self.parent_type.declare(builder)
+        pass
 
     def read_all(self, f):
         while True:
@@ -40,6 +29,9 @@ class Type(EqMixin):
                 yield obj
             else:
                 break
+
+    def copy(self):
+        return copy(self)
 
     def __mul__(self, other):
         return Product(None, self, other)

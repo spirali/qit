@@ -17,6 +17,10 @@ class Int(Type):
         return self.struct.unpack(data)[0]
 
     @property
+    def basic_type(self):
+        return Int()
+
+    @property
     def iterator(self):
         raise NotImplemented()
 

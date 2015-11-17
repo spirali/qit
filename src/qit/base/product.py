@@ -16,19 +16,16 @@ class Product(Type):
                 types.append(arg)
                 names.append("_v{}".format(len(names)))
 
-        if all(t.is_basic_type() for t in types):
-            super().__init__()
-        else:
-            basic_types = [ t.basic_type for t in types ]
-            super().__init__(Product(name, *(zip(basic_types, names))))
-
         assert len(set(names)) == len(names)
-
         self.name = name
         self.names = names
         self.types = types
         self.generators = [ None ] * len(names)
         self.iterators = [ None ] * len(names)
+
+    @property
+    def basic_type(self):
+        return Product(self.name, *zip(self.basic_types, self.names))
 
     @property
     def basic_types(self):
@@ -50,6 +47,7 @@ class Product(Type):
 
     def set(self, name, type):
         index = self.names.index(name)
+        # TODO: Check that type is compatible with basic_type
         self.types[index] = type
 
     def get_iterator(self, name):
@@ -80,12 +78,9 @@ class Product(Type):
         return builder.get_product_type(self)
 
     def declare(self, builder):
-        if self.parent_type:
-            self.parent_type.declare(builder)
-        else:
-            builder.declare_product_class(self)
+        builder.declare_product_class(self.basic_type)
 
-    def derive(self):
+    def copy(self):
         return Product(self.name, *zip(self.types, self.names))
 
     def read(self, f):

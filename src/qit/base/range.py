@@ -3,10 +3,10 @@ from qit.base.int import Int
 from qit.base.type import Type, TypeIterator
 from qit.base.generator import Generator
 
-class Range(Type):
+class Range(Int):
 
     def __init__(self, stop):
-        super().__init__(Int())
+        super().__init__()
         self.stop = stop
 
     @property

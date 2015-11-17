@@ -42,15 +42,15 @@ def test_product_no_name():
     p = Product(None, Range(2), Range(3))
     Qit().run(p.iterate().print_all())
 
-def test_product_derive():
+def test_product_copy():
     p = Product("P", (Range(4), "x"), (Range(4), "y"))
 
-    p2 = p.derive()
+    p2 = p.copy()
     p2.set("x", Range(2))
 
     q = Product("Q", (p, "p1"), (p, "p2"))
 
-    q2 = q.derive()
+    q2 = q.copy()
     q2.set_generator("p2", p2.generator)
     q2.set_iterator("p1", p2.iterator)
 

@@ -9,13 +9,13 @@ class Sequence(Type):
     struct_size = struct.size
 
     def __init__(self, element_type, size=None):
-        if size is None and element_type.is_basic_type():
-            parent_type = None
-        else:
-            parent_type = Sequence(element_type.basic_type)
-        super().__init__(parent_type)
+        super().__init__()
         self.element_type = element_type
         self.size = size
+
+    @property
+    def basic_type(self):
+        return Sequence(self.element_type)
 
     def get_element_type(self, builder):
         return builder.get_sequence_type(self)
