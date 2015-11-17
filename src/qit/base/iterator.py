@@ -21,6 +21,9 @@ class Iterator(EqMixin):
     def print_all(self):
         return ActionPrintAll(self)
 
+    def get_functions(self):
+        return set()
+
 
 # To broke import cycle, we import following packages at the end
 from qit.base.transformation import TakeTransformation

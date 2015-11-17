@@ -20,12 +20,12 @@ class CppEnv(object):
                           "-I", paths.LIBQIT_DIR)
 
     def run_print_all(self, iterator):
-        builder = CppBuilder()
+        builder = CppBuilder(self.qit)
         builder.build_print_all(iterator)
         self.compile_builder(builder, None)
 
     def run_collect(self, iterator):
-        builder = CppBuilder()
+        builder = CppBuilder(self.qit)
         builder.build_collect(iterator)
         return self.compile_builder(builder, iterator.output_type.basic_type)
 
@@ -41,7 +41,6 @@ class CppEnv(object):
                       suffix=".cpp",
                       dir=self.build_dir,
                       delete=False)
-
 
     def compile_builder(self, builder, type):
         text = builder.writer.get_string()

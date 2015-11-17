@@ -3,14 +3,18 @@
 
 from qit.build.writer import CppWriter
 
+import os.path
+
 
 class CppBuilder(object):
 
-    def __init__(self):
+    def __init__(self, qit):
+        self.qit = qit
         self.writer = CppWriter()
         self.id_counter = 100
         self.declaration_keys = []
         self.autonames = []
+        self.included_files = {}
 
     def get_autoname(self, key, prefix):
         for k, name in self.autonames:
@@ -21,8 +25,11 @@ class CppBuilder(object):
         return name
 
     def build_print_all(self, iterator):
+        self.included_files = {}
+
         self.write_header()
         iterator.declare(self)
+        self.write_functions(iterator)
         self.main_begin()
         variable = iterator.make_iterator(self)
         element = self.make_element(iterator.output_type.basic_type)
@@ -33,8 +40,11 @@ class CppBuilder(object):
         self.main_end()
 
     def build_collect(self, iterator):
+        self.included_files = {}
+
         self.write_header()
         iterator.declare(self)
+        self.write_functions(iterator)
         self.main_begin()
         variable = iterator.make_iterator(self)
         element = self.make_element(iterator.output_type.basic_type)
@@ -59,6 +69,7 @@ class CppBuilder(object):
         self.writer.line("#include <qit.h>")
         self.writer.line("#include <stdlib.h>")
         self.writer.line("#include <time.h>")
+        self.writer.emptyline()
         self.writer.emptyline()
 
     def main_begin(self):
@@ -146,7 +157,7 @@ class CppBuilder(object):
         return "qit::MapIterator<{}, {}, {} >" \
                 .format(map.parent_iterator.get_iterator_type(self),
                         map.function.return_type.get_element_type(self),
-                        map.function.name)
+                        self.get_autoname(map.function, "f"))
 
 
     # Product
@@ -323,8 +334,30 @@ class CppBuilder(object):
 
     # Function
 
+    def write_functions(self, iterator):
+        functions = iterator.get_functions()
+        files = self.get_function_files(functions)
+
+        for path, functions in files.items():
+            if not os.path.isfile(path):
+                message = "(required definitions: " + ", ".join([self.qit.declarations(fn)[0] for fn in functions]) + ")"
+
+                if self.qit.create_files:
+                    self.create_files(iterator)
+                    message = "(file was created with function definitions)"
+
+                raise Exception("Source file {0} does not exist {1}".format(path, message))
+            else:
+                self.include_source_file(path)
+
     def declare_function(self, function):
-        self.writer.class_begin(function.name)
+        if self.check_declaration_key((function, "function")):
+            return
+
+        if function.is_external():
+            self.writer.line(self.qit.declarations(function)[0] + ";")
+
+        self.writer.class_begin(self.get_autoname(function, "f"))
         self.writer.line("public:")
         params = [ "const {} &{}".format(c.get_element_type(self), name)
                    for c, name in function.params ]
@@ -332,8 +365,71 @@ class CppBuilder(object):
                          function.return_type.get_element_type(self),
                          ",".join(params))
         self.writer.block_begin()
-        self.writer.text(function.inline_code)
+
+        if function.is_external():
+            self.write_external_function_call(function)
+        else:
+            self.writer.text(function.inline_code)
         self.writer.block_end()
 
         self.writer.class_end()
 
+    def write_external_function_call(self, function):
+        call = ""
+
+        if function.return_type is not None:
+            call += "return "
+
+        call += function.name + "("
+        call += ", ".join([param[1] for param in function.params])  # param names
+
+        self.writer.line(call + ");")
+
+    def get_function_declaration(self, function):
+        declaration = ""
+
+        if function.return_type is not None:
+            declaration += function.return_type.get_element_type(self) + " "
+        else:
+            declaration += "void "
+
+        declaration += function.name + "("
+        declaration += ", ".join([ "const {} &{}".format(c.get_element_type(self), name)
+                   for c, name in function.params ])  # param names
+
+        return declaration + ")"
+
+    # file creation and include
+
+    def include_source_file(self, source_file):
+        source_file = os.path.abspath(source_file)
+
+        if source_file in self.included_files:
+            return
+        else:
+            self.included_files[source_file] = True
+
+        self.writer.line("#include \"{0}\"".format(source_file))
+
+    def get_function_files(self, functions):
+        files = {}
+
+        for fn in functions:
+            if fn.is_external():
+                file = fn.external_file
+                if file in files:
+                    files[file].append(fn)
+                else:
+                    files[file] = [fn]
+
+        return files
+
+    def create_files(self, obj):
+        import os.path
+        files = self.get_function_files(obj.get_functions())
+
+        for path, functions in files.items():
+            if not os.path.isfile(path):
+                with open(path, "w") as file:
+                    for fn in functions:
+                        file.write(self.qit.declarations(fn)[0] + "\n{\n\n}\n\n")

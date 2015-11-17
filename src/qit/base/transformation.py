@@ -20,6 +20,9 @@ class Transformation(Iterator):
     def get_element_type(self, builder):
         return self.parent_iterator.get_element_type(builder)
 
+    def get_functions(self):
+        return self.parent_iterator.get_functions()
+
 
 class TakeTransformation(Transformation):
 
@@ -58,3 +61,8 @@ class MapTransformation(Transformation):
 
     def get_element_type(self, builder):
         return self.function.return_type.get_element_type(builder)
+
+    def get_functions(self):
+        fn_set = set()
+        fn_set.add(self.function)
+        return fn_set.union(self.parent_iterator.get_functions())
