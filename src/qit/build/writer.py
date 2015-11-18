@@ -20,6 +20,7 @@ class CppWriter(object):
         self.indent += "\t"
 
     def indent_pop(self):
+        assert self.indent
         self.indent = self.indent[:-1]
 
     def iterate_end(self):

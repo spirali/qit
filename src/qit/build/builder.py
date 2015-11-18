@@ -1,9 +1,8 @@
 
 #import writer as writer
 
+from qit.base.system import RuleType
 from qit.build.writer import CppWriter
-
-import os.path
 
 
 class CppBuilder(object):
@@ -52,11 +51,15 @@ class CppBuilder(object):
         self.writer.line("       QIT generated file")
         self.writer.line("*/")
         self.writer.emptyline()
-        self.writer.line("#include <assert.h>")
-        self.writer.line("#include <iostream>")
         self.writer.line("#include <qit.h>")
+        self.writer.emptyline()
+        self.writer.line("#include <vector>")
+        self.writer.line("#include <set>")
+        self.writer.line("#include <iostream>")
+        self.writer.line("#include <assert.h>")
         self.writer.line("#include <stdlib.h>")
         self.writer.line("#include <time.h>")
+
         self.writer.emptyline()
         self.writer.emptyline()
 
@@ -516,3 +519,123 @@ class CppBuilder(object):
         declaration += ", ".join([ "const {} &{}".format(c.get_element_type(self), name)
                    for c, name in function.params ])  # param names
         return declaration + ")"
+
+
+    # System
+
+    def get_system_iterator_type(self, iterator):
+        return self.get_autoname(iterator, "SystemIterator")
+
+    def declare_system_iterator(self, iterator):
+        if self.check_declaration_key(iterator):
+           return
+        system = iterator.system
+        iterator_type = self.get_system_iterator_type(iterator)
+        element_iterator_type = system.initial_states_iterator.get_iterator_type(self)
+        element_type = system.state_type.get_element_type(self)
+
+        self.writer.class_begin(iterator_type)
+        self.writer.line("public:")
+        self.writer.line("typedef {} value_type;", element_type)
+        self.writer.line("{}(const {} &iterator) "
+                         ": inited(false), rule(0), depth(0), "
+                         "queue2_emit(0), iterator(iterator) {{}}",
+                         iterator_type, element_iterator_type)
+
+        self.writer.line("bool next(value_type &out)")
+        self.writer.block_begin()
+        self.writer.if_begin("queue2_emit")
+        self.writer.line("out = queue2[queue2.size() - queue2_emit--];")
+        self.writer.line("return true;")
+        self.writer.block_end();
+        self.writer.if_begin("!inited")
+        self.writer.if_begin("iterator.next(out)")
+        self.writer.line("queue1.push_back(out);")
+        self.writer.line("discovered.insert(out);")
+        self.writer.line("return true;")
+        self.writer.block_end()
+        self.writer.line("inited = true;")
+        self.writer.if_begin("0 == {}", iterator.depth)
+        self.writer.line("return false;")
+        self.writer.block_end()
+        self.writer.block_end()
+
+        self.writer.line("for(;;)")
+        self.writer.block_begin()
+        self.writer.if_begin("queue1.size() == 0")
+        self.writer.if_begin("queue2.size() == 0")
+        self.writer.line("return false;")
+        self.writer.block_end()
+        self.writer.line("depth++;")
+        self.writer.if_begin("depth >= {}", iterator.depth)
+        self.writer.line("return false;")
+        self.writer.block_end()
+        self.writer.line("std::swap(queue1, queue2);")
+        self.writer.block_end()
+        self.writer.block_begin()
+        self.writer.line("switch(rule)")
+        self.writer.block_begin()
+        for i, rule in enumerate(system.rules):
+            self.writer.line("case {}:", i)
+            self.writer.block_begin()
+            self.writer.line("{} rule_fn;", self.get_autoname(rule, "f"), i)
+            if system.get_rule_type(rule) == RuleType.one_to_one:
+                self.writer.line("rule++;")
+                self.writer.line("out = rule_fn(queue1.back());", element_type)
+                self.writer.if_begin("discovered.find(out) == discovered.end()")
+                self.writer.line("discovered.insert(out);")
+                self.writer.line("queue2.push_back(out);")
+                self.writer.line("return true;")
+                self.writer.line("// no break!")
+                self.writer.block_end()
+            else:
+                assert system.get_rule_type(rule) == RuleType.one_to_many
+                self.writer.line("rule++;")
+                self.writer.line("std::vector<{} > v;", element_type)
+                self.writer.line("v = rule_fn(queue1.back());", element_type)
+                self.writer.line("size_t found = 0;")
+                self.writer.line("for (const auto &i : v)")
+                self.writer.block_begin()
+                self.writer.if_begin("discovered.find(i) == discovered.end()")
+                self.writer.line("discovered.insert(i);")
+                self.writer.line("queue2.push_back(i);")
+                self.writer.line("found++;")
+                self.writer.block_end()
+                self.writer.block_end()
+                self.writer.if_begin("found")
+                self.writer.line("queue2_emit = found - 1;")
+                self.writer.line("out = queue2[queue2.size() - found];")
+                self.writer.line("return true;")
+                self.writer.block_end()
+            self.writer.block_end()
+        self.writer.line("default: break;")
+        self.writer.block_end()
+        self.writer.line("rule = 0;")
+        self.writer.line("queue2_emit = 0;")
+        self.writer.line("queue1.pop_back();")
+        self.writer.block_end()
+        self.writer.block_end()
+        self.writer.block_end()
+
+        self.writer.line("void reset()")
+        self.writer.block_begin()
+        self.writer.line("inited = false;")
+        self.writer.line("rule = 0;")
+        self.writer.line("depth = 0;")
+        self.writer.line("queue2_emit = 0;")
+        self.writer.line("discovered.clear();")
+        self.writer.line("queue1.clear();")
+        self.writer.line("queue2.clear();")
+        self.writer.line("iterator.reset();")
+        self.writer.block_end()
+
+        self.writer.line("protected:")
+        self.writer.line("bool inited;")
+        self.writer.line("int rule;")
+        self.writer.line("int depth;")
+        self.writer.line("std::vector<{} > queue1;", element_type)
+        self.writer.line("std::vector<{} > queue2;", element_type)
+        self.writer.line("std::set<{} > discovered;", element_type)
+        self.writer.line("size_t queue2_emit;", element_type)
+        self.writer.line("{} iterator;", element_iterator_type)
+        self.writer.class_end()

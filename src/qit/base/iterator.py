@@ -29,6 +29,10 @@ class Iterator(EqMixin):
     def get_functions(self):
         return set()
 
+    @property
+    def iterator(self):
+        return self
+
 
 # To broke import cycle, we import following packages at the end
 from qit.base.transformation import TakeTransformation, FilterTransformation

@@ -53,3 +53,4 @@ class RangeGenerator(Generator):
     def make_generator(self, builder):
         args = (str(self.stop),)
         return builder.make_generator(self, args)
+

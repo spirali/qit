@@ -7,8 +7,15 @@ from qit.base.type import Type
 class Values(Type):
 
     def __init__(self, type, values):
-        self.basic_type = type.basic_type
+        self.type = type
         self.values = values
+
+    def get_element_type(self, builder):
+        return self.type.get_element_type(builder)
+
+    @property
+    def basic_type(self):
+        return self.type.basic_type
 
     @property
     def iterator(self):

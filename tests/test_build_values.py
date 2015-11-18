@@ -3,8 +3,13 @@ init()
 
 from qit import Int, Range, Sequence
 
-def test_empty_values():
+def test_values_int_empty():
     v = Int().values()
+    result = Qit().run(v.iterate())
+    assert result == []
+
+def test_values_product_empty():
+    v = (Int() * Int()).values()
     result = Qit().run(v.iterate())
     assert result == []
 
