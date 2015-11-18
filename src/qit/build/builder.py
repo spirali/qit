@@ -174,7 +174,7 @@ class CppBuilder(object):
         return self.get_autoname(generator, type_name + "Generator")
 
     def declare_product_class(self, product):
-        if self.check_declaration_key((product, "class")):
+        if self.check_declaration_key(product):
             return
         product_type = self.get_product_type(product)
         self.writer.class_begin(product_type)
@@ -218,7 +218,7 @@ class CppBuilder(object):
 
 
     def declare_product_iterator(self, iterator):
-        if self.check_declaration_key((iterator, "iterator")):
+        if self.check_declaration_key(iterator):
             return
 
         product = iterator.output_type
@@ -286,7 +286,7 @@ class CppBuilder(object):
 
 
     def declare_product_generator(self, generator):
-        if self.check_declaration_key((generator, "generator")):
+        if self.check_declaration_key(generator):
             return
 
         product = generator.output_type
@@ -368,6 +368,8 @@ class CppBuilder(object):
         return self.get_autoname(iterator, "ValuesGenerator")
 
     def declare_values_iterator(self, iterator):
+        if self.check_declaration_key(iterator):
+            return
         output_type = iterator.output_type
         iterator_type = self.get_values_iterator_type(iterator)
         element_type = output_type.get_element_type(self)
@@ -401,6 +403,8 @@ class CppBuilder(object):
         self.writer.class_end()
 
     def declare_values_generator(self, generator):
+        if self.check_declaration_key(generator):
+            return
         output_type = generator.output_type
         generator_type = self.get_values_generator_type(generator)
         element_type = output_type.get_element_type(self)
