@@ -20,18 +20,6 @@ class CppBuilder(object):
         self.autonames.append((key, name))
         return name
 
-    def build_print_all(self, iterator):
-        self.write_header()
-        iterator.declare(self)
-        self.main_begin()
-        variable = iterator.make_iterator(self)
-        element = self.make_element(iterator.output_type.basic_type)
-        self.writer.line("while ({}.next({}))", variable, element)
-        self.writer.block_begin()
-        self.writer.line("std::cout << {} << std::endl;", element)
-        self.writer.block_end()
-        self.main_end()
-
     def build_collect(self, iterator):
         self.write_header()
         iterator.declare(self)

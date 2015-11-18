@@ -19,11 +19,6 @@ class CppEnv(object):
                           "-march=native",
                           "-I", paths.LIBQIT_DIR)
 
-    def run_print_all(self, iterator):
-        builder = CppBuilder()
-        builder.build_print_all(iterator)
-        self.compile_builder(builder, None)
-
     def run_collect(self, iterator):
         builder = CppBuilder()
         builder.build_collect(iterator)
