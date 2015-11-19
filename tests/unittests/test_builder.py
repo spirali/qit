@@ -1,3 +1,4 @@
+from testutils import Qit
 
 from qit.build.builder import CppBuilder
 from qit import Range
@@ -5,7 +6,7 @@ from qit import Range
 
 def test_build_range():
     r = Range(10)
-    builder = CppBuilder()
+    builder = CppBuilder(Qit())
     i = r.iterate()
 
     v = i.make_iterator(builder)
