@@ -58,3 +58,13 @@ class MapTransformation(Transformation):
 
     def get_element_type(self, builder):
         return self.function.return_type.get_element_type(builder)
+
+
+class SortTransformation(Transformation):
+
+    def __init__(self, iterator, ascending=True):
+        super().__init__(iterator)
+        self.asceding = True
+
+    def get_iterator_type(self, builder):
+        return builder.get_sort_iterator(self)

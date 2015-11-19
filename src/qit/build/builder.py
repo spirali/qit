@@ -142,6 +142,12 @@ class CppBuilder(object):
         return "qit::TakeIterator<{} >" \
                 .format(take.parent_iterator.get_iterator_type(self))
 
+    # Sort
+
+    def get_sort_iterator(self, sort):
+        return "qit::SortIterator<{} >" \
+                .format(sort.parent_iterator.get_iterator_type(self))
+
     # Map
 
     def get_map_iterator(self, map):
@@ -196,15 +202,29 @@ class CppBuilder(object):
         self.writer.line("{}() {{}}", product_type)
 
         # Write
-        self.writer.line("void write(FILE *f)")
+        self.writer.line("void write(FILE *f) const")
         self.writer.block_begin()
         for name in product.names:
             self.writer.line("qit::write(f, {});", name)
         self.writer.block_end()
 
+        # Operator <
+        self.writer.line("bool operator <(const {} &other) const", product_type)
+        self.writer.block_begin()
+        for name in product.names:
+            self.writer.if_begin("{0} < other.{0}", name)
+            self.writer.line("return true;")
+            self.writer.block_end()
+            self.writer.if_begin("{0} == other.{0}", name)
+
+        for name in product.names:
+            self.writer.block_end()
+        self.writer.line("return false;")
+        self.writer.block_end()
         self.writer.class_end()
 
         ## Stream
+        """
         self.writer.line("std::ostream& operator<<(std::ostream& os, const {}& v)",
                   product_type)
         self.writer.block_begin()
@@ -215,6 +235,7 @@ class CppBuilder(object):
             self.writer.line("os << v.{};", name)
         self.writer.line("return os << \"}}\";")
         self.writer.block_end()
+        """
 
 
     def declare_product_iterator(self, iterator):

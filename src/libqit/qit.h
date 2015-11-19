@@ -9,5 +9,6 @@
 // Transformations
 #include "map.h"
 #include "generator.h"
+#include "sort.h"
 
 #endif // QIT_QIT_H
