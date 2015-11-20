@@ -12,7 +12,7 @@ class CppEnv(object):
 
     def __init__(self, qit):
         self.qit = qit
-        self.build_dir = os.path.join(os.getcwd(), "qit-build")
+        self.build_dir = os.path.abspath(qit.build_dir)
         self.compiler = "g++"
         self.cpp_flags = ("-O3",
                           "-std=c++11",
