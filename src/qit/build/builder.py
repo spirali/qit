@@ -139,6 +139,15 @@ class CppBuilder(object):
         assert isinstance(value, int)
         return str(value)
 
+    # Bool
+
+    def get_bool_type(self):
+        return "bool"
+
+    def make_bool_instance(self, value):
+        assert isinstance(value, bool)
+        return "true" if value else "false"
+
     # Range
 
     def get_range_iterator(self):
@@ -167,6 +176,12 @@ class CppBuilder(object):
                         map.function.return_type.get_element_type(self),
                         self.get_autoname(map.function, "f"))
 
+    # Filter
+
+    def get_filter_iterator(self, filter):
+        return "qit::FilterIterator<{}, {} >" \
+                .format(filter.parent_iterator.get_iterator_type(self),
+                        filter.function.name)    # TODO autoname
 
     # Product
 

@@ -15,6 +15,9 @@ class Iterator(EqMixin):
     def sort(self, asceding=True):
         return SortTransformation(self, asceding)
 
+    def filter(self, function):
+        return FilterTransformation(self, function)
+
     # Non-public
 
     def declare(self, builder):
@@ -28,6 +31,6 @@ class Iterator(EqMixin):
 
 
 # To broke import cycle, we import following packages at the end
-from qit.base.transformation import TakeTransformation
+from qit.base.transformation import TakeTransformation, FilterTransformation
 from qit.base.transformation import MapTransformation
 from qit.base.transformation import SortTransformation

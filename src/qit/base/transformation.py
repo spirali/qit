@@ -1,4 +1,3 @@
-
 from qit.base.iterator import Iterator
 
 
@@ -45,7 +44,7 @@ class MapTransformation(Transformation):
         super().__init__(iterator)
         self.function = function
         assert function.return_type is not None
-        # TODO: Check compatability of function and valid return type
+        # TODO: Check compatibility of function and valid return type
 
     @property
     def output_type(self):
@@ -76,3 +75,29 @@ class SortTransformation(Transformation):
 
     def get_iterator_type(self, builder):
         return builder.get_sort_iterator(self)
+
+class FilterTransformation(Transformation):
+
+    def __init__(self, iterator, function):
+        super().__init__(iterator)
+        self.function = function
+
+        from qit import Bool
+
+        assert isinstance(function.return_type, Bool)
+        # TODO: Check compatibility of function parameters
+
+    @property
+    def output_type(self):
+        return self.parent_iterator.output_type
+
+    def declare(self, builder):
+        self.parent_iterator.declare(builder)
+        self.function.return_type.declare(builder)
+        self.function.declare(builder)
+
+    def get_iterator_type(self, builder):
+        return builder.get_filter_iterator(self)
+
+    def get_element_type(self, builder):
+        return self.function.return_type.get_element_type(builder)

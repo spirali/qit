@@ -10,5 +10,6 @@
 #include "map.h"
 #include "generator.h"
 #include "sort.h"
+#include "filter.h"
 
 #endif // QIT_QIT_H
