@@ -3,14 +3,13 @@ init()
 
 from qit import Range
 
-def test_range_print_all():
+def test_range_iterate():
     expr = Range(10).iterate()
     c = Qit()
-    c.run(expr.print_all())
-    assert list(range(10)) == c.run(expr.collect())
+    assert list(range(10)) == c.run(expr)
 
-def test_range_random_print_all():
-    expr = Range(10).generate().take(10).collect()
+def test_range_generate():
+    expr = Range(10).generate().take(10)
     c = Qit()
     lst = c.run(expr)
     assert len(lst) == 10

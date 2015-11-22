@@ -16,6 +16,9 @@ class Int(Type):
             return None
         return self.struct.unpack(data)[0]
 
+    def make_instance(self, builder, value):
+        return builder.make_int_instance(value)
+
     @property
     def basic_type(self):
         return Int()

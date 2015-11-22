@@ -33,6 +33,9 @@ class Type(EqMixin):
     def copy(self):
         return copy(self)
 
+    def values(self, *args):
+        return Values(self, args)
+
     def __mul__(self, other):
         return Product(None, self, other)
 
@@ -42,3 +45,4 @@ class TypeIterator(Iterator):
 
 # To break import cycle
 from qit.base.product import Product
+from qit.base.values import Values

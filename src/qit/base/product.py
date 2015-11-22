@@ -45,6 +45,9 @@ class Product(Type):
         return Product(None,
                        *(tuple(zip(self.types, self.names)) + (other,)))
 
+    def make_instance(self, builder, value):
+        return builder.make_product_instance(self, value)
+
     def set(self, name, type):
         index = self.names.index(name)
         # TODO: Check that type is compatible with basic_type

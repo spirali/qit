@@ -66,3 +66,13 @@ class MapTransformation(Transformation):
         fn_set = set()
         fn_set.add(self.function)
         return fn_set.union(self.parent_iterator.get_functions())
+
+
+class SortTransformation(Transformation):
+
+    def __init__(self, iterator, ascending=True):
+        super().__init__(iterator)
+        self.asceding = True
+
+    def get_iterator_type(self, builder):
+        return builder.get_sort_iterator(self)
