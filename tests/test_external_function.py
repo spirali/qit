@@ -1,69 +1,59 @@
 from os import path
-import tempfile
 
 import pytest
-from testutils import Qit, init
+from testutils import Qit, init, get_filename_in_build_dir
+from testutils import make_file_in_build_dir
 
 init()
 
 from qit import Range, Function, Product
-from qit.base import qit
 from qit.base.int import Int
+from qit.base.exception import MissingFiles
 
+def test_extern_function():
+    q = Qit()
 
-def test_create_files_manual():
-    tmp_dir = tempfile.gettempdir()
-    file = path.join(tmp_dir, next(tempfile._get_candidate_names()))
+    make_file_in_build_dir("f.hxx", "int f(int x) { return x * 10; }")
 
-    p = Product("p", Range(1), Range(1))
-    f = Function("f").takes(p, "p").returns(Int()).from_file(file)
+    i = Int()
+    f = Function("f").takes(i, "x").returns(i).from_file("f.hxx")
 
+    result = q.run(Range(6).iterate().map(f))
+    assert result == [ 0, 10, 20, 30, 40, 50 ]
+
+def test_create_files_direct_call():
     c = Qit()
-    c.create_source_files(f)
-
-    assert path.isfile(file)
-
+    p = Product("p", Range(1), Range(1))
+    f = Function("f").takes(p, "p").returns(Int()).from_file("myfile.hxx")
+    c.create_files(f)
+    assert path.isfile(get_filename_in_build_dir("myfile.hxx"))
 
 def test_create_files_auto():
-    tmp_dir = tempfile.gettempdir()
-    file = path.join(tmp_dir, next(tempfile._get_candidate_names()))
+    f = Function("f").takes(Int(), "p").returns(Int()).from_file("fg.hxx")
+    g = Function("g").takes(Int(), "p").returns(Int()).from_file("fg.hxx")
+    h = Function("h").takes(Int(), "p").returns(Int()).from_file("h.hxx")
 
-    p = Product("p", Range(1), Range(1))
-    f = Function("f").takes(p, "p").returns(Int()).from_file(file)
+    c = Qit()
+    with pytest.raises(MissingFiles):
+        c.run(Range(10).iterate().map(f).map(g).map(h).map(f))
 
-    c = qit.Qit(True, True)
+    assert not path.isfile(get_filename_in_build_dir("fg.hxx"))
+    assert not path.isfile(get_filename_in_build_dir("h.hxx"))
 
-    with pytest.raises(Exception):
-        c.run(p.iterate().map(f).collect())
+    c = Qit(create_files=True)
+    with pytest.raises(MissingFiles):
+        c.run(Range(10).iterate().map(f).map(g).map(h).map(f))
 
-    assert path.isfile(file)
+    assert path.isfile(get_filename_in_build_dir("fg.hxx"))
+    assert path.isfile(get_filename_in_build_dir("h.hxx"))
 
-
-def test_declaration():
+def test_qit_declaration():
     p = Product("P", Range(1), Range(1))
     f = Function("f").takes(p, "p").returns(Int())
     g = Function("g").takes(Int(), "x").returns(Int())
 
     q = Qit()
 
-    assert q.declarations(f)[0] == "int f(const P &p)"
-    assert q.declarations(g)[0] == "int g(const int &x)"
-    assert len(q.declarations(p.iterate().map(f).map(g).map(g))) == 2
-
-def test_existing_file():
-    tmp_dir = tempfile.gettempdir()
-    file = path.join(tmp_dir, next(tempfile._get_candidate_names()))
-
-    with open(file, "w") as f:
-        f.write("ahoj")
-
-    p = Product("p", Range(1), Range(1))
-    f = Function("f").takes(p, "p").returns(Int()).from_file(file)
-
-    c = qit.Qit(True, True)
-
-    with pytest.raises(Exception): # compile error
-        c.run(p.iterate().map(f).collect())
-
-    with open(file, "r") as f:
-        assert f.read() == "ahoj"
+    assert q.declarations(f, False) == ["int f(const P &p)"]
+    assert q.declarations(g, False) == ["int g(const int &x)"]
+    assert len(q.declarations(p.iterate().map(f).map(g).map(g), False)) == 2

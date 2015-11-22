@@ -22,7 +22,20 @@ def cleanup_build_dir():
             else:
                 shutil.rmtree(path)
 
-def Qit():
+def get_filename_in_build_dir(filename):
+    return os.path.join(BUILD_DIR, filename)
+
+def get_file_in_build_dir(filename, mode="r"):
+    return open(get_filename_in_build_dir(filename), mode)
+
+def make_file_in_build_dir(filename, content=""):
+    with get_file_in_build_dir(filename, "w") as f:
+        f.write(content)
+
+def Qit(create_files=False):
     cleanup_build_dir()
     import qit
-    return qit.Qit(debug=True, build_dir=BUILD_DIR)
+    return qit.Qit(debug=True,
+                   create_files=create_files,
+                   build_dir=BUILD_DIR,
+                   source_dir=BUILD_DIR)

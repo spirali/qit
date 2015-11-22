@@ -8,13 +8,13 @@ import os.path
 
 class CppBuilder(object):
 
-    def __init__(self, qit):
-        self.qit = qit
+    def __init__(self, env):
+        self.env = env
         self.writer = CppWriter()
         self.id_counter = 100
         self.declaration_keys = []
         self.autonames = []
-        self.included_files = {}
+        self.included_filenames = set()
 
     def get_autoname(self, key, prefix):
         for k, name in self.autonames:
@@ -24,12 +24,15 @@ class CppBuilder(object):
         self.autonames.append((key, name))
         return name
 
-    def build_collect(self, iterator):
-        self.included_files = {}
+    def include_filename(self, filename):
+        if filename in self.included_filenames:
+            return
+        self.included_filenames.add(filename)
+        self.writer.line("#include \"{}\"", filename)
 
+    def build_collect(self, iterator):
         self.write_header()
         iterator.declare(self)
-        self.write_functions(iterator)
         self.main_begin()
         self.init_fifo()
         variable = iterator.make_iterator(self)
@@ -372,41 +375,6 @@ class CppBuilder(object):
         return "std::vector<{} >".format(
             sequence.element_type.get_element_type(self))
 
-    # file creation and include
-
-    def include_source_file(self, source_file):
-        source_file = os.path.abspath(source_file)
-
-        if source_file in self.included_files:
-            return
-        else:
-            self.included_files[source_file] = True
-
-        self.writer.line("#include \"{0}\"".format(source_file))
-
-    def get_function_files(self, functions):
-        files = {}
-
-        for fn in functions:
-            if fn.is_external():
-                file = fn.external_file
-                if file in files:
-                    files[file].append(fn)
-                else:
-                    files[file] = [fn]
-
-        return files
-
-    def create_files(self, obj):
-        import os.path
-        files = self.get_function_files(obj.get_functions())
-
-        for path, functions in files.items():
-            if not os.path.isfile(path):
-                with open(path, "w") as file:
-                    for fn in functions:
-                        file.write(self.qit.declarations(fn)[0] + "\n{\n\n}\n\n")
-
     # Values
 
     def get_values_iterator_type(self, iterator):
@@ -478,28 +446,13 @@ class CppBuilder(object):
 
     # Function
 
-    def write_functions(self, iterator):
-        functions = iterator.get_functions()
-        files = self.get_function_files(functions)
-
-        for path, functions in files.items():
-            if not os.path.isfile(path):
-                message = "(required definitions: " + ", ".join([self.qit.declarations(fn)[0] for fn in functions]) + ")"
-
-                if self.qit.create_files:
-                    self.create_files(iterator)
-                    message = "(file was created with function definitions)"
-
-                raise Exception("Source file {0} does not exist {1}".format(path, message))
-            else:
-                self.include_source_file(path)
-
     def declare_function(self, function):
         if self.check_declaration_key((function, "function")):
             return
 
+
         if function.is_external():
-            self.writer.line(self.qit.declarations(function)[0] + ";")
+            self.include_filename(self.env.get_function_filename(function))
 
         self.writer.class_begin(self.get_autoname(function, "f"))
         self.writer.line("public:")
@@ -540,5 +493,4 @@ class CppBuilder(object):
         declaration += function.name + "("
         declaration += ", ".join([ "const {} &{}".format(c.get_element_type(self), name)
                    for c, name in function.params ])  # param names
-
         return declaration + ")"
