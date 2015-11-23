@@ -181,7 +181,7 @@ class CppBuilder(object):
     def get_filter_iterator(self, filter):
         return "qit::FilterIterator<{}, {} >" \
                 .format(filter.parent_iterator.get_iterator_type(self),
-                        filter.function.name)    # TODO autoname
+                        self.get_autoname(filter.function, "f"))
 
     # Product
 
