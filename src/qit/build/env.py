@@ -7,6 +7,10 @@ from qit.base.exception import MissingFiles
 import tempfile
 import os
 import subprocess
+import logging
+
+
+LOG = logging.getLogger("qit")
 
 
 class CppEnv(object):
@@ -44,7 +48,7 @@ class CppEnv(object):
         makedir_if_not_exists(self.build_dir)
         with self.get_file() as f:
             filename = f.name
-            print("Creating file: {}".format(filename))
+            logging.debug("Creating file %s", filename)
             f.write(text)
         exe_filename = filename[:-4]
         args = (self.compiler, "-o", exe_filename, filename) + self.cpp_flags
@@ -60,7 +64,7 @@ class CppEnv(object):
             os.mkfifo(fifo_name)
             try:
                 args = (exe_filename, fifo_name,)
-                print("Running: " + " ".join(args))
+                logging.debug("Running: %s", args)
                 popen = subprocess.Popen(args)
                 with open(fifo_name, "rb") as f:
                     result = list(type.read_all(f))
@@ -70,7 +74,7 @@ class CppEnv(object):
                 os.unlink(fifo_name)
         else:
             args = (exe_filename,)
-            print("Running: " + " ".join(args))
+            logging.debug("Running: %s", args)
             subprocess.check_call(args)
 
     def declarations(self, obj, exclude_inline):
@@ -125,6 +129,7 @@ class CppEnv(object):
         builder = CppBuilder(self)
         filenames = self.get_missing_function_filenames(obj.get_functions())
         for path, functions in filenames.items():
+            logging.warning("Creating file %s", path)
             with open(path, "w") as f:
                 for fn in functions:
                     f.write(builder.get_function_declaration(fn))
