@@ -227,10 +227,17 @@ class CppBuilder(object):
             self.writer.line("return true;")
             self.writer.block_end()
             self.writer.if_begin("{0} == other.{0}", name)
-
         for name in product.names:
             self.writer.block_end()
         self.writer.line("return false;")
+        self.writer.block_end()
+
+        # Operator ==
+        self.writer.line("bool operator ==(const {} &other) const", product_type)
+        self.writer.block_begin()
+        self.writer.line("return {};",
+                         " && ".join("({0} == other.{0})".format(name)
+                             for name in product.names))
         self.writer.block_end()
         self.writer.class_end()
 

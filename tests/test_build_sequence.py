@@ -34,7 +34,6 @@ def test_sequence_of_sequence():
     assert len(ss2) == len(result)
     assert ss2 == set(map(tuple, result))
 
-
 def test_empty_sequence():
     s = Sequence(Range(3), 0)
     assert Qit().run(s.iterate()) == [[]]
