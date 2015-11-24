@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <stdio.h>
+#include <assert.h>
 
 namespace qit {
 
