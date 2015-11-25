@@ -1,5 +1,6 @@
-from qit.build.builder import CppBuilder
 from qit.build.env import CppEnv
+from qit.base.atom import validate_variables, assign_values
+from qit.base.qitobject import check_qit_object
 
 import logging
 
@@ -33,17 +34,18 @@ class Qit:
             logging.basicConfig(format="%(levelname)s: %(message)s",
                                 level=log_level)
 
-    def run(self, iterator):
-        return self.env.run_collect(iterator)
+    def run(self, iterator, args=None):
+        variables = iterator.get_variables()
+        validate_variables(variables)
+        if args is None:
+            args = {}
+        return self.env.run_collect(iterator,
+                                    assign_values(variables, args))
 
     def declarations(self, obj, exclude_inline=True):
-        if not hasattr(obj, "get_functions"):
-            raise TypeError(
-                    repr(obj) + " does not have attribute 'get_functions'")
+        check_qit_object(obj)
         return self.env.declarations(obj, exclude_inline=exclude_inline)
 
     def create_files(self, obj):
-        if not hasattr(obj, "get_functions"):
-            raise TypeError(
-                    repr(obj) + " does not have attribute 'get_functions'")
+        check_qit_object(obj)
         self.env.create_source_files(obj)

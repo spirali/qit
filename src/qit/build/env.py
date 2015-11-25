@@ -24,10 +24,10 @@ class CppEnv(object):
                           "-march=native",
                           "-I", paths.LIBQIT_DIR)
 
-    def run_collect(self, iterator):
+    def run_collect(self, iterator, args):
         self.check_all(iterator)
         builder = CppBuilder(self)
-        builder.build_collect(iterator)
+        builder.build_collect(iterator, args)
         return self.compile_builder(builder, iterator.output_type.basic_type)
 
     def get_file(self):

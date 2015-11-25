@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Range, Sequence
+from qit import Range, Sequence, Int, Variable
 import itertools
 
 def test_sequence_collect():
@@ -13,6 +13,7 @@ def test_sequence_collect():
     pp = list(itertools.product(rr, rr))
     ss = set(itertools.product(pp, pp, pp))
 
+    print(s.iterate().get_objects())
     result = Qit().run(s.iterate())
     assert len(ss) == len(result)
     assert ss == set(map(tuple, result))
@@ -34,7 +35,19 @@ def test_sequence_of_sequence():
     assert len(ss2) == len(result)
     assert ss2 == set(map(tuple, result))
 
-def test_empty_sequence():
+def test_sequence_empty():
     s = Sequence(Range(3), 0)
     assert Qit().run(s.iterate()) == [[]]
     assert Qit().run(s.generate().take(3)) == [[]] * 3
+
+def test_sequence_variable():
+    ctx = Qit()
+    x = Variable(Int(), "x")
+    y = Variable(Int(), "y")
+    r = Sequence(Range(y), x).iterate()
+    result = ctx.run(r, args={"x": 2, "y" : 3})
+
+    rr = list(range(3))
+    expected = set(itertools.product(rr, rr))
+    assert set(map(tuple, result)) == expected
+    assert len(result) == len(expected)

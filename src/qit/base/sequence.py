@@ -1,6 +1,7 @@
 from qit.base.type import Type
 from qit.base.iterator import Iterator
 from qit.base.generator import Generator
+from qit.base.int import Int
 import struct
 
 
@@ -12,11 +13,18 @@ class Sequence(Type):
     def __init__(self, element_type, size=None):
         super().__init__()
         self.element_type = element_type
-        self.size = size
+        if size is not None:
+            self.size = Int().check_value(size)
+        else:
+            self.size = None
 
     @property
     def basic_type(self):
         return Sequence(self.element_type)
+
+    @property
+    def childs(self):
+        return super().childs + (self.element_type,)
 
     def get_element_type(self, builder):
         return builder.get_sequence_type(self)
@@ -31,8 +39,11 @@ class Sequence(Type):
     def make_instance(self, builder, value):
         return builder.make_sequence_instance(self, value)
 
-    def declare(self, builder):
-        self.element_type.declare(builder)
+    def is_python_instance(self, obj):
+        return isinstance(obj, tuple) or isinstance(obj, list)
+
+    def transform_python_instance(self, obj):
+        return tuple(obj)
 
     @property
     def iterator(self):
@@ -52,30 +63,34 @@ class Sequence(Type):
 class SequenceIterator(Iterator):
 
     def __init__(self, sequence, size=None):
-        self.output_type = sequence
-        self.size = size
+        super().__init__(sequence)
+        self.size = Int().check_value(size)
+
+    @property
+    def childs(self):
+        return super().childs + (self.size, self.element_iterator)
 
     @property
     def element_iterator(self):
         return self.output_type.element_type.iterator
-
-    def declare(self, builder):
-        self.output_type.element_type.iterator.declare(builder)
-        super().declare(builder)
 
     def get_iterator_type(self, builder):
         return builder.get_sequence_iterator(self)
 
     def make_iterator(self, builder):
         return builder.make_basic_iterator(
-                self, (self.element_iterator,), (str(self.size),))
+                self, (self.element_iterator,), (self.size.get_code(builder),))
 
 
 class SequenceGenerator(Generator):
 
     def __init__(self, sequence, size=None):
-        self.output_type = sequence
-        self.size = size
+        super().__init__(sequence)
+        self.size = Int().check_value(size)
+
+    @property
+    def childs(self):
+        return super().childs + (self.size, self.element_generator)
 
     @property
     def element_generator(self):
@@ -86,8 +101,4 @@ class SequenceGenerator(Generator):
 
     def make_generator(self, builder):
         return builder.make_basic_generator(
-                self, (self.element_generator,), (str(self.size),))
-
-    def declare(self, builder):
-        self.output_type.element_type.generator.declare(builder)
-        super().declare(builder)
+                self, (self.element_generator,), (self.size.get_code(builder),))

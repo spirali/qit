@@ -7,7 +7,7 @@ class Range(Int):
 
     def __init__(self, stop):
         super().__init__()
-        self.stop = stop
+        self.stop = self.check_value(stop)
 
     @property
     def iterator(self):
@@ -21,7 +21,7 @@ class Range(Int):
 class RangeIterator(TypeIterator):
 
     def __init__(self, stop):
-        self.stop = stop
+        self.stop = Int().check_value(stop)
 
     @property
     def output_type(self):
@@ -34,14 +34,18 @@ class RangeIterator(TypeIterator):
         return builder.get_range_iterator()
 
     def make_iterator(self, builder):
-        args = (str(self.stop),)
+        args = (self.stop.get_code(builder),)
         return builder.make_iterator(self, args)
+
+    @property
+    def childs(self):
+        return (self.stop,)
 
 
 class RangeGenerator(Generator):
 
     def __init__(self, stop):
-        self.stop = stop
+        self.stop = Int().check_value(stop)
 
     @property
     def output_type(self):
@@ -51,6 +55,9 @@ class RangeGenerator(Generator):
         return builder.get_range_generator()
 
     def make_generator(self, builder):
-        args = (str(self.stop),)
+        args = (self.stop.get_code(builder),)
         return builder.make_generator(self, args)
 
+    @property
+    def childs(self):
+        return (self.stop,)

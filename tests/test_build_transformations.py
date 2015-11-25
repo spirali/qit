@@ -1,12 +1,19 @@
 from testutils import Qit, init
 init()
 
-from qit import Range, Product, Function, Sequence
+from qit import Range, Product, Function, Sequence, Variable, Int
 
 def test_take_too_much():
     expr = Range(10).iterate().take(20)
     c = Qit()
     assert list(range(10)) == c.run(expr)
+
+def test_take_variable():
+    ctx = Qit()
+    x = Variable(Int(), "x")
+    r = Range(10).generate().take(x)
+    result = ctx.run(r, args={"x": 5})
+    assert len(result) == 5
 
 def test_map():
     p = Product((Range(4), "x"), (Range(4), "y")).set_name("P")

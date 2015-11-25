@@ -19,6 +19,9 @@ class Int(Type):
     def make_instance(self, builder, value):
         return builder.make_int_instance(value)
 
+    def is_python_instance(self, obj):
+        return isinstance(obj, int)
+
     @property
     def basic_type(self):
         return Int()

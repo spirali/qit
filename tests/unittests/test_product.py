@@ -1,5 +1,5 @@
 
-from qit import Range, Product
+from qit import Range, Product, Int, Variable
 
 def test_product_construct_named():
 
@@ -13,7 +13,6 @@ def test_product_construct_named():
     assert p1 == p2
     assert p1 != p3
     assert p2 != p3
-
 
 def test_product_construct_noname():
 
@@ -31,3 +30,32 @@ def test_product_construct_noname():
     assert p1 != p3
     assert p1 != p4
     assert p3 == p4
+
+def test_product_variables():
+    x = Variable(Int(), "x")
+    y = Variable(Int(), "x")
+
+    t = Range(x) * Range(y)
+    assert set() == set(t.get_variables())
+    assert {x, y} == set(t.iterate().get_variables())
+    assert {x, y} == set(t.generate().get_variables())
+
+def test_product_generator_iterator_variables():
+    x = Variable(Int(), "x")
+    y = Variable(Int(), "x")
+    z = Variable(Int(), "z")
+
+    p = Product((Range(z), "a"), (Range(z), "b"))
+    p.set_iterator("a", Range(x).iterator)
+    p.set_generator("b", Range(y).generator)
+
+    assert set() == set(p.get_variables())
+    assert {z, x} == set(p.iterate().get_variables())
+    assert {z, y} == set(p.generate().get_variables())
+
+    p.set_iterator("b", Range(12).iterator)
+    p.set_generator("a", Range(12).generator)
+
+    assert set() == set(p.get_variables())
+    assert {x} == set(p.iterate().get_variables())
+    assert {y} == set(p.generate().get_variables())

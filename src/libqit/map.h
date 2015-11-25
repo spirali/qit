@@ -7,15 +7,14 @@ namespace qit {
 template<typename Tin, typename Tout, typename F> class MapIterator {
 	public:
 		typedef Tout value_type;
-		MapIterator(Tin &iterator) : iterator(iterator) {}
+		MapIterator(Tin &iterator, F functor) : iterator(iterator), functor(functor) {}
 
 		bool next(value_type &out) {
 			typename Tin::value_type v;
 			if (!iterator.next(v)) {
 				return false;
 			}
-			F f;
-			out = f(v);
+			out = functor(v);
 			return true;
 		}
 
@@ -25,6 +24,7 @@ template<typename Tin, typename Tout, typename F> class MapIterator {
 	protected:
 		Tin &iterator;
 		int count;
+		F &functor;
 };
 
 }

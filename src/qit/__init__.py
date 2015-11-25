@@ -1,6 +1,9 @@
 
 from qit.base.qit import Qit
 
+# Basic
+from qit.base.atom import Variable
+
 # Types
 from qit.base.int import Int
 from qit.base.bool import Bool

@@ -1,5 +1,6 @@
 from qit.base.iterator import Iterator
 from qit.base.sequence import Sequence
+from qit.base.int import Int
 from enum import Enum
 
 class RuleType(Enum):
@@ -12,7 +13,7 @@ class System:
 
     def __init__(self, initial_states, rules):
         self.initial_states_iterator = initial_states.iterator
-        self.rules = rules
+        self.rules = tuple(rules)
         assert all(self.get_rule_type(rule) != RuleType.invalid
                    for rule in rules), "Invalid rules"
 
@@ -22,11 +23,6 @@ class System:
 
     def iterate_states(self, depth):
         return SystemIterator(self, depth)
-
-    def declare(self, builder):
-        self.initial_states_iterator.declare(builder)
-        for rule in self.rules:
-            rule.declare(builder)
 
     def get_rule_type(self, rule):
         rule_type = rule.return_type.basic_type
@@ -41,17 +37,22 @@ class System:
 class SystemIterator(Iterator):
 
     def __init__(self, system, depth):
-        self.output_type = system.state_type
+        super().__init__(system.state_type)
         self.system = system
-        self.depth = depth
+        self.depth = Int().check_value(depth)
+
+    @property
+    def childs(self):
+        return super().childs + \
+               (self.system.initial_states_iterator, self.depth) + \
+               self.system.rules
 
     def get_iterator_type(self, builder):
         return builder.get_system_iterator_type(self)
 
-    def declare(self, builder):
-        self.system.declare(builder)
-        builder.declare_system_iterator(self)
-
     def make_iterator(self, builder):
         return builder.make_basic_iterator(
                 self, (self.system.initial_states_iterator,))
+
+    def declare(self, builder):
+        builder.declare_system_iterator(self)
