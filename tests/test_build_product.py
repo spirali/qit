@@ -5,7 +5,7 @@ from qit import Range, Product
 import itertools
 
 def test_product_iterate():
-    p = Product("MyProduct", (Range(3), "x"), (Range(3), "y"))
+    p = Product((Range(3), "x"), (Range(3), "y")).set_name("MyProduct")
     r = list(range(3))
     pairs = set(itertools.product(r, r))
     c = Qit()
@@ -14,8 +14,10 @@ def test_product_iterate():
     assert set(result) == pairs
 
 def test_product_in_product():
-    p = Product("P", (Range(2), "x"), (Range(2), "y"))
-    q = Product("Q", (p, "p1"), (p, "p2"))
+    p = Product((Range(2), "x"), (Range(2), "y"))
+    p.name = "P"
+    q = Product((p, "p1"), (p, "p2"))
+    q.name = "Q"
 
     r = list(range(2))
     p_all = list(itertools.product(r, r))
@@ -27,8 +29,8 @@ def test_product_in_product():
     assert len(result) == len(q_all)
 
 def test_random_product():
-    p = Product("P", (Range(2), "x"), (Range(2), "y"))
-    q = Product("Q", (p, "p1"), (p, "p2"))
+    p = Product((Range(2), "x"), (Range(2), "y"))
+    q = Product((p, "p1"), (p, "p2"))
     c = Qit()
     result = c.run(q.generate().take(100))
     assert len(result) == 100
@@ -39,17 +41,17 @@ def test_random_product():
         assert d >= 0 and d < 2
 
 def test_product_no_name():
-    p = Product(None, Range(2), Range(3))
+    p = Product(Range(2), Range(3))
     result = Qit().run(p.iterate())
     assert set(itertools.product(range(2), range(3))) == set(result)
 
 def test_product_copy():
-    p = Product("P", (Range(4), "x"), (Range(4), "y"))
+    p = Product((Range(4), "x"), (Range(4), "y")).set_name("P")
 
     p2 = p.copy()
     p2.set("x", Range(2))
 
-    q = Product("Q", (p, "p1"), (p, "p2"))
+    q = Product((p, "p1"), (p, "p2")).set_name("Q")
 
     q2 = q.copy()
     q2.set_generator("p2", p2.generator)

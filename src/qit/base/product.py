@@ -1,10 +1,11 @@
 
-from qit.base.type import Type, TypeIterator
+from qit.base.type import NamedType, TypeIterator
 from qit.base.generator import Generator
 
-class Product(Type):
+class Product(NamedType):
 
-    def __init__(self, name=None, *args):
+    def __init__(self, *args):
+        self.name = None
         names = []
         types = []
 
@@ -17,15 +18,18 @@ class Product(Type):
                 names.append("_v{}".format(len(names)))
 
         assert len(set(names)) == len(names)
-        self.name = name
         self.names = names
         self.types = types
         self.generators = [ None ] * len(names)
         self.iterators = [ None ] * len(names)
 
+    def set_name(self, name):
+        self.name = name
+        return self
+
     @property
     def basic_type(self):
-        return Product(self.name, *zip(self.basic_types, self.names))
+        return Product(*zip(self.basic_types, self.names))
 
     @property
     def basic_types(self):
@@ -42,8 +46,7 @@ class Product(Type):
                 self, [self.get_generator(name) for name in self.names])
 
     def __mul__(self, other):
-        return Product(None,
-                       *(tuple(zip(self.types, self.names)) + (other,)))
+        return Product(*(tuple(zip(self.types, self.names)) + (other,)))
 
     def make_instance(self, builder, value):
         return builder.make_product_instance(self, value)
@@ -82,9 +85,10 @@ class Product(Type):
 
     def declare(self, builder):
         builder.declare_product_class(self.basic_type)
+        super().declare(builder)
 
     def copy(self):
-        return Product(self.name, *zip(self.types, self.names))
+        return Product(*zip(self.types, self.names))
 
     def read(self, f):
         if not self.names:

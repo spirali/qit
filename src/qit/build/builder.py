@@ -83,6 +83,14 @@ class CppBuilder(object):
                          variable)
         return variable
 
+    def declare_type_alias(self, type):
+        if self.check_declaration_key(type):
+            return
+        if type.name is not None:
+            self.writer.line("typedef {} {};",
+                             type.basic_type.get_element_type(self),
+                             type.name)
+
     ## Method for multiple dispatch of base classes
 
     def get_generator_iterator(self, transformation):
@@ -195,7 +203,7 @@ class CppBuilder(object):
         return "{}({})".format(self.get_product_type(product), args)
 
     def get_product_type(self, product):
-        if product.basic_type.name is None:
+        if product.name is None:
             return self.get_autoname(product.basic_type, "Product")
         else:
             return product.name

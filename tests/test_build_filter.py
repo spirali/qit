@@ -45,7 +45,7 @@ def test_filter_map():
 
 
 def test_filter_product():
-    p = Product("P", (Range(5), "x"), (Range(5), "y"))
+    p = Product((Range(5), "x"), (Range(5), "y")).set_name("P")
     q = Qit()
 
     f = Function("filter").returns(Bool()).takes(p, "p").code("return p.x == p.y;")

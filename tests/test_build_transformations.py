@@ -9,7 +9,7 @@ def test_take_too_much():
     assert list(range(10)) == c.run(expr)
 
 def test_map():
-    p = Product("P", (Range(4), "x"), (Range(4), "y"))
+    p = Product((Range(4), "x"), (Range(4), "y")).set_name("P")
     f = Function("f").takes(p, "p").returns(Range(8)).code("return p.x + p.y;")
     result = Qit().run(p.iterate().take(6).map(f).take(4))
     assert result == [0, 1, 2, 3]

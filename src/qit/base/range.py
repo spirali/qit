@@ -1,6 +1,6 @@
 
 from qit.base.int import Int
-from qit.base.type import Type, TypeIterator
+from qit.base.type import TypeIterator
 from qit.base.generator import Generator
 
 class Range(Int):

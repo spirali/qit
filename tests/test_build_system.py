@@ -65,7 +65,7 @@ def test_system_in_product():
     s = System(v, (f,g))
 
     #i = Int().iterator = s.iterate_states(2)
-    P = Product(None, (Int(), "x"), (Range(2), "y"))
+    P = Product((Int(), "x"), (Range(2), "y"))
     P.set_iterator("x", s.iterate_states(2))
     P.set_iterator("y", s.iterate_states(2))
 

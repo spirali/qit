@@ -37,7 +37,17 @@ class Type(EqMixin):
         return Values(self, args)
 
     def __mul__(self, other):
-        return Product(None, self, other)
+        return Product(self, other)
+
+
+class NamedType(Type):
+
+    def declare(self, builder):
+        super().declare(builder)
+        if self.name:
+            self.basic_type.declare(builder)
+            builder.declare_type_alias(self)
+
 
 class TypeIterator(Iterator):
     pass
