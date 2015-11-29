@@ -7,7 +7,8 @@ namespace qit {
 template<typename Tin, typename Tout, typename F> class MapIterator {
 	public:
 		typedef Tout value_type;
-		MapIterator(Tin &iterator, F functor) : iterator(iterator), functor(functor) {}
+		MapIterator() {}
+		MapIterator(const Tin &iterator, const F &functor) : iterator(iterator), functor(functor) {}
 
 		bool next(value_type &out) {
 			typename Tin::value_type v;
@@ -21,10 +22,13 @@ template<typename Tin, typename Tout, typename F> class MapIterator {
 		void reset() {
 			iterator.reset();
 		}
+
+		QIT_ITERATOR_WRITE_METHOD
+
 	protected:
-		Tin &iterator;
+		Tin iterator;
 		int count;
-		F &functor;
+		F functor;
 };
 
 }

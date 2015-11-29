@@ -1,28 +1,19 @@
 
-from qit.base.iterator import Iterator
-from qit.base.qitobject import QitObject
+from qit.base.iterator import IteratorType
+from qit.base.utils import sorted_variables
 
-class Generator(QitObject):
-
-    def __init__(self, output_type):
-        self.output_type = output_type
-
-    def make_generator(self, builder):
-        return builder.make_generator(self, ())
-
-
-class GeneratorIterator(Iterator):
+class GeneratorIterator(IteratorType):
 
     def __init__(self, generator):
-        super().__init__(generator.output_type)
+        super().__init__(generator.type)
         self.generator = generator
 
-    def get_iterator_type(self, builder):
-        return builder.get_generator_iterator(self)
+    def declare(self, builder):
+        builder.declare_generator_iterator(self)
 
-    def make_iterator(self, builder):
-        variable = self.generator.make_generator(builder)
-        return builder.make_iterator(self, (variable,))
+    @property
+    def constructor_args(self):
+        return tuple(sorted_variables(self.generator.get_variables()))
 
     @property
     def childs(self):

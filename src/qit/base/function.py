@@ -1,8 +1,7 @@
 
 from qit.base.qitobject import QitObject
-from qit.base.sequence import Sequence
-from qit.base.atom import validate_variables, Variable, sort_variables
 from qit.base.expression import Expression
+from qit.base.utils import validate_variables, sorted_variables
 
 class Function(QitObject):
 
@@ -32,7 +31,7 @@ class Function(QitObject):
 
     def reads(self, *variables):
         validate_variables(variables)
-        self.variables = variables
+        self.variables = tuple(variables)
         return self
 
     def from_file(self, filename):
@@ -49,8 +48,8 @@ class Function(QitObject):
     def childs(self):
         return tuple(t for t,name in self.params) + self.variables
 
-    def make_functor(self, builder):
-        return builder.make_functor(self)
+    def build_value(self, builder):
+        return builder.build_functor(self)
 
     def write_code(self, builder):
         if self.is_external():
@@ -66,7 +65,7 @@ class Function(QitObject):
 class FunctionCall(Expression):
 
     def __init__(self, function, args):
-        super().__init__(function.return_type.basic_type)
+        super().__init__(function.return_type)
         self.function = function
 
         # TODO: Check args count with QitException
@@ -80,37 +79,33 @@ class FunctionCall(Expression):
     def childs(self):
         return super().childs + self.args + (self.function,)
 
-    def get_code(self, builder):
-        return builder.get_function_call_code(self)
+    def build_value(self, builder):
+        return builder.build_function_call(self)
 
 
-class FunctionFromIterator(Function):
+class FunctionFromExpression(Function):
 
-    def __init__(self, iterator, params=None, return_type=None):
+    def __init__(self, expression, params=None):
         super().__init__()
-        variables = iterator.get_variables()
+        variables = expression.get_variables()
         validate_variables(variables)
         if params is None:
-            params = sort_variables(variables)
-        self.iterator = iterator
+            params = sorted_variables(variables)
+        self.expression = expression
         for v in params:
             self.takes(v.type, v.name)
-        for v in sorted(set(variables).difference(params)):
-            self.reads(v)
-        if return_type is None:
-            return_type = Sequence(iterator.output_type.basic_type)
-        self.returns(return_type)
+        self.reads(*sorted(set(variables).difference(params)))
+        self.returns(self.expression.type)
 
     @property
     def childs(self):
-        return super().childs + (self.iterator,)
+        return super().childs + (self.expression,)
 
     @property
     def bounded_variables(self):
         return frozenset(Variable(t, name) for t, name in self.params)
 
     def write_code(self, builder):
-        if self.iterator.output_type.basic_type == self.return_type.basic_type:
-            builder.write_function_from_iterator(self, sequence=False)
-        else:
-            builder.write_function_from_iterator(self, sequence=True)
+        builder.write_function_from_expression(self.expression)
+
+from qit.base.atom import Variable

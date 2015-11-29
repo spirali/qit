@@ -24,7 +24,7 @@ def test_extern_function():
 def test_create_files_direct_call():
     c = Qit()
     p = Range(1) * Range(1)
-    f = Function("f").takes(p, "p").returns(Int()).from_file("myfile.hxx")
+    f = Function("f").takes(p.type, "p").returns(Int()).from_file("myfile.hxx")
     c.create_files(f)
     assert path.isfile(get_filename_in_build_dir("myfile.hxx"))
 
@@ -48,12 +48,11 @@ def test_create_files_auto():
     assert path.isfile(get_filename_in_build_dir("h.hxx"))
 
 def test_qit_declaration():
-    p = Product(Range(1), Range(1)).set_name("P")
-    f = Function("f").takes(p, "p").returns(Int())
+    p = Product(Range(1), Range(1))
+    f = Function("f").takes(p.type, "p").returns(Int())
     g = Function("g").takes(Int(), "x").returns(Int())
 
     q = Qit()
 
-    assert q.declarations(f, False) == ["int f(const P &p)"]
     assert q.declarations(g, False) == ["int g(const int &x)"]
     assert len(q.declarations(p.iterate().map(f).map(g).map(g), False)) == 2

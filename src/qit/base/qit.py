@@ -1,5 +1,5 @@
 from qit.build.env import CppEnv
-from qit.base.atom import validate_variables, assign_values
+from qit.base.utils import validate_variables, assign_values
 from qit.base.qitobject import check_qit_object
 
 import logging
@@ -34,12 +34,14 @@ class Qit:
             logging.basicConfig(format="%(levelname)s: %(message)s",
                                 level=log_level)
 
-    def run(self, iterator, args=None):
-        variables = iterator.get_variables()
+    def run(self, obj, args=None):
+        check_qit_object(obj)
+        assert obj.is_expression()
+        variables = obj.get_variables()
         validate_variables(variables)
         if args is None:
             args = {}
-        return self.env.run_collect(iterator,
+        return self.env.run_collect(obj,
                                     assign_values(variables, args))
 
     def declarations(self, obj, exclude_inline=True):

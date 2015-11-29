@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Int, Range, Sequence, Variable
+from qit import Int, Range, Vector, Variable
 
 
 def test_values_int_empty():
@@ -34,15 +34,15 @@ def test_product_values():
     result = ctx.run(v.generate().take(100))
     assert all(i in ((0,0), (1, 7), (3, 2)) for i in result)
 
-def test_sequence_values():
+def test_vector_values():
     ctx = Qit()
     s1 = [(1,2), (3,4), (7,7)]
     s2 = [(1,1), (2, 2)]
     s3 = []
     s4 = [(4,4), (4,4), (4,4)]
 
-    p = Range(4) * Range(10)
-    s = Sequence(p)
+    p = Int() * Int()
+    s = Vector(p)
     v = s.values(s1, s2, s3, s4)
 
     result = ctx.run(v.iterate())

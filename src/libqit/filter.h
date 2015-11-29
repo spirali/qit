@@ -7,15 +7,13 @@ namespace qit {
 template<typename T, typename F> class FilterIterator {
 	public:
 		typedef typename T::value_type value_type;
-		FilterIterator(T &iterator) : iterator(iterator) {}
+		FilterIterator(const T &iterator, const F &functor) : iterator(iterator) {}
 
 		bool next(value_type &out) {
 		    typename T::value_type v;
-		    F f;
-
 			while (iterator.next(v))
             {
-                if (f(v))
+                if (functor(v))
                 {
                     out = v;
                     return true;
@@ -28,8 +26,12 @@ template<typename T, typename F> class FilterIterator {
 		void reset() {
 			iterator.reset();
 		}
+
+        QIT_ITERATOR_WRITE_METHOD
+
 	protected:
-		T &iterator;
+		T iterator;
+        F functor;
 };
 
 }

@@ -24,11 +24,11 @@ class CppEnv(object):
                           "-march=native",
                           "-I", paths.LIBQIT_DIR)
 
-    def run_collect(self, iterator, args):
-        self.check_all(iterator)
+    def run_collect(self, obj, args):
+        self.check_all(obj)
         builder = CppBuilder(self)
-        builder.build_collect(iterator, args)
-        return self.compile_builder(builder, iterator.output_type.basic_type)
+        builder.build_collect(obj, args)
+        return self.compile_builder(builder, obj.type)
 
     def get_file(self):
         makedir_if_not_exists(self.build_dir)
@@ -67,7 +67,7 @@ class CppEnv(object):
                 logging.debug("Running: %s", args)
                 popen = subprocess.Popen(args)
                 with open(fifo_name, "rb") as f:
-                    result = list(type.read_all(f))
+                    result = type.read(f)
                 popen.wait()
                 return result
             finally:

@@ -1,11 +1,14 @@
 from qit.utils.eqmixin import HashableEqMixin
 from qit.base.exception import InvalidType, QitException
-
+from copy import copy
 
 class QitObject(HashableEqMixin):
 
     childs = ()
     bounded_variables = frozenset()
+
+    def is_type(self):
+        return False
 
     def is_function(self):
         return False
@@ -26,8 +29,6 @@ class QitObject(HashableEqMixin):
         return result
 
     def get_variables(self):
-        if self.is_variable():
-            return frozenset((self,))
         result = frozenset()
         for child in self.childs:
             result = result.union(child.get_variables())
@@ -50,6 +51,9 @@ class QitObject(HashableEqMixin):
         for child in self.childs:
             child.declare_all(builder)
         self.declare(builder)
+
+    def copy(self):
+        return copy(self)
 
 
 def check_qit_object(obj):

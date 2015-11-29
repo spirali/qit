@@ -9,26 +9,15 @@ def test_filter_empty():
     r = Range(5)
     q = Qit()
 
-    f = Function("filter").returns(Bool()).takes(r, "r").code("return false;")
+    f = Function("filter").returns(Bool()).takes(r.type, "r").code("return false;")
 
     assert len(q.run(r.iterate().filter(f))) == 0
-
-
-def test_filter_wrong_return_type():
-    q = Qit()
-    r = Range(5)
-
-    f = Function("filter").returns(Int()).takes(r, "q").code("return false;")
-
-    with pytest.raises(Exception):
-        q.run(r.iterate().filter(f))
-
 
 def test_filter_even():
     r = Range(5)
     q = Qit()
 
-    f = Function("filter").returns(Bool()).takes(r, "r").code("return r % 2 == 0;")
+    f = Function("filter").returns(Bool()).takes(r.type, "r").code("return r % 2 == 0;")
 
     assert q.run(r.iterate().filter(f)) == [0, 2, 4]
 
@@ -45,9 +34,9 @@ def test_filter_map():
 
 
 def test_filter_product():
-    p = Product((Range(5), "x"), (Range(5), "y")).set_name("P")
+    p = Product((Range(5), "x"), (Range(5), "y"))
     q = Qit()
 
-    f = Function("filter").returns(Bool()).takes(p, "p").code("return p.x == p.y;")
+    f = Function("filter").returns(Bool()).takes(p.type, "p").code("return p.x == p.y;")
 
     q.run(p.iterate().filter(f)) == [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]

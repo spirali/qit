@@ -1,25 +1,18 @@
 
-from qit.base.iterator import Iterator
-from qit.base.generator import GeneratorIterator
 from qit.base.qitobject import QitObject, check_qit_object
 from qit.base.atom import Constant
 
-
-from copy import copy
 
 class Type(QitObject):
 
     def __init__(self):
         pass
 
-    def is_basic_type(self):
-        return self == self.basic_type
+    def is_type(self):
+        return True
 
-    def iterate(self):
-        return self.iterator
-
-    def generate(self):
-        return GeneratorIterator(self.generator)
+    def build_type(self, builder):
+        return builder.get_autoname(self, "Type")
 
     def declare(self, builder):
         pass
@@ -32,28 +25,25 @@ class Type(QitObject):
 
     def check_value(self, value):
         if self.is_python_instance(value):
-            return Constant(self.basic_type,
-                            self.transform_python_instance(value))
+            return Constant(self, self.transform_python_instance(value))
         check_qit_object(value)
-        value.check_expression_type(self.basic_type)
+        value.check_expression_type(self)
         return value
 
-    def read_all(self, f):
-        while True:
-            obj = self.read(f)
-            if obj is not None:
-                yield obj
-            else:
-                break
-
-    def copy(self):
-        return copy(self)
+    def const(self, value):
+        assert self.is_python_instance(value)
+        return Constant(self, self.transform_python_instance(value))
 
     def values(self, *args):
-        return Values(self.basic_type, args)
+        from qit.base.values import Values
+        return Values(self, args)
+
+    def make_domain(self):
+        from qit.base.domain import Domain
+        return Domain(self)
 
     def __mul__(self, other):
-        return Product(self, other)
+        return Struct(self, other)
 
 
 class NamedType(Type):
@@ -63,11 +53,4 @@ class NamedType(Type):
             self.basic_type.declare(builder)
             builder.declare_type_alias(self)
 
-
-class TypeIterator(Iterator):
-    pass
-
-
-# To break import cycle
-from qit.base.product import Product
-from qit.base.values import Values
+from qit.base.struct import Struct

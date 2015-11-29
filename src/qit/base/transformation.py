@@ -1,22 +1,21 @@
-from qit.base.iterator import Iterator
+from qit.base.iterator import IteratorType
 from qit.base.int import Int
 
-class Transformation(Iterator):
+
+class Transformation(IteratorType):
 
     def __init__(self, iterator, output_type=None):
         if output_type is None:
-            output_type = iterator.output_type
+            output_type = iterator.type.output_type
         super().__init__(output_type)
         self.parent_iterator = iterator
 
-    def make_iterator(self, builder):
-        return builder.make_basic_iterator(self, (self.parent_iterator,))
-
-    def get_element_type(self, builder):
-        return self.parent_iterator.get_element_type(builder)
-
     @property
     def childs(self):
+        return super().childs + (self.parent_iterator,)
+
+    @property
+    def constructor_args(self):
         return (self.parent_iterator,)
 
 
@@ -26,13 +25,12 @@ class TakeTransformation(Transformation):
         super().__init__(parent_iterator)
         self.count = Int().check_value(count)
 
-    def get_iterator_type(self, builder):
-        return builder.get_take_iterator(self)
+    def build_type(self, builder):
+        return builder.build_take_iterator(self)
 
-    def make_iterator(self, builder):
-        return builder.make_basic_iterator(self,
-                                          (self.parent_iterator,),
-                                          (self.count.get_code(builder),))
+    @property
+    def constructor_args(self):
+        return (self.parent_iterator, self.count)
 
     @property
     def childs(self):
@@ -47,16 +45,12 @@ class MapTransformation(Transformation):
         assert function.return_type is not None
         # TODO: Check compatibility of function and valid return type
 
-    def make_iterator(self, builder):
-        fn = self.function.make_functor(builder)
-        return builder.make_basic_iterator(
-                self, (self.parent_iterator,), (fn,))
+    def build_type(self, builder):
+        return builder.build_map_iterator(self)
 
-    def get_iterator_type(self, builder):
-        return builder.get_map_iterator(self)
-
-    def get_element_type(self, builder):
-        return self.function.return_type.get_element_type(builder)
+    @property
+    def constructor_args(self):
+        return (self.parent_iterator, self.function)
 
     @property
     def childs(self):
@@ -69,8 +63,9 @@ class SortTransformation(Transformation):
         super().__init__(iterator)
         self.asceding = True
 
-    def get_iterator_type(self, builder):
-        return builder.get_sort_iterator(self)
+    def build_type(self, builder):
+        return builder.build_sort_iterator(self)
+
 
 class FilterTransformation(Transformation):
 
@@ -78,16 +73,12 @@ class FilterTransformation(Transformation):
         super().__init__(iterator)
         self.function = function
 
-        from qit import Bool
+    def build_type(self, builder):
+        return builder.build_filter_iterator(self)
 
-        assert isinstance(function.return_type, Bool)
-        # TODO: Check compatibility of function parameters
-
-    def get_iterator_type(self, builder):
-        return builder.get_filter_iterator(self)
-
-    def get_element_type(self, builder):
-        return self.function.return_type.get_element_type(builder)
+    @property
+    def constructor_args(self):
+        return (self.parent_iterator, self.function)
 
     @property
     def childs(self):

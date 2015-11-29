@@ -7,10 +7,10 @@ namespace qit {
 template<typename T> class TakeIterator {
 	public:
 		typedef typename T::value_type value_type;
-		TakeIterator(T &iterator, int count) : iterator(iterator), count(count) {}
+		TakeIterator(const T &iterator, int count) : iterator(iterator), count(count) {}
 
 		bool next(value_type &out) {
-			if (count == 0) {
+			if (count <= 0) {
 				return false;
 			}
 			count--;
@@ -20,8 +20,11 @@ template<typename T> class TakeIterator {
 		void reset() {
 			iterator.reset();
 		}
+
+		QIT_ITERATOR_WRITE_METHOD
+
 	protected:
-		T &iterator;
+		T iterator;
 		int count;
 };
 

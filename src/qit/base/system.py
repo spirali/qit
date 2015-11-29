@@ -1,6 +1,8 @@
-from qit.base.iterator import Iterator
-from qit.base.sequence import Sequence
+from qit.base.iterator import IteratorType
+from qit.base.vector import Vector
 from qit.base.int import Int
+from qit.base.qitobject import QitObject
+from qit.base.utils import sorted_variables
 from enum import Enum
 
 class RuleType(Enum):
@@ -9,50 +11,46 @@ class RuleType(Enum):
     one_to_many = 2
 
 
-class System:
+class System(QitObject):
 
     def __init__(self, initial_states, rules):
-        self.initial_states_iterator = initial_states.iterator
+        self.state_iterator = initial_states.iterate()
+        self.state_type = self.state_iterator.type.output_type
         self.rules = tuple(rules)
         assert all(self.get_rule_type(rule) != RuleType.invalid
                    for rule in rules), "Invalid rules"
 
     @property
-    def state_type(self):
-        return self.initial_states_iterator.output_type.basic_type
+    def childs(self):
+        return (self.state_type, self.state_iterator) + self.rules
 
     def iterate_states(self, depth):
-        return SystemIterator(self, depth)
+        return SystemIterator(self, depth).make()
 
     def get_rule_type(self, rule):
-        rule_type = rule.return_type.basic_type
-        basic_type = self.state_type
-        if basic_type == rule_type:
+        rule_type = rule.return_type
+        if self.state_type == rule_type:
             return RuleType.one_to_one
-        elif Sequence(basic_type) == rule_type:
+        elif Vector(self.state_type) == rule_type:
             return RuleType.one_to_many
         return RuleType.invalid
 
 
-class SystemIterator(Iterator):
+class SystemIterator(IteratorType):
 
     def __init__(self, system, depth):
         super().__init__(system.state_type)
-        self.system = system
         self.depth = Int().check_value(depth)
+        self.system = system
 
     @property
     def childs(self):
-        return super().childs + \
-               (self.system.initial_states_iterator, self.depth) + \
-               self.system.rules
+        return super().childs + (self.depth, self.system)
 
-    def get_iterator_type(self, builder):
-        return builder.get_system_iterator_type(self)
-
-    def make_iterator(self, builder):
-        return builder.make_basic_iterator(
-                self, (self.system.initial_states_iterator,))
+    @property
+    def constructor_args(self):
+        variables = sorted_variables(self.get_variables())
+        return (self.system.state_iterator, self.depth) + tuple(variables)
 
     def declare(self, builder):
         builder.declare_system_iterator(self)

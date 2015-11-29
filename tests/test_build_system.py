@@ -1,7 +1,8 @@
 from testutils import Qit, init
 init()
 
-from qit import Int, Range, Sequence, System, Function, Product
+from qit import Int, Range, Sequence, System
+from qit import Function, Product, Vector, Variable
 import itertools
 
 def test_system_empty():
@@ -22,7 +23,7 @@ def test_system_basic():
 
     # Rules
     f = Function("f").takes(Int(), "x").returns(Int()).code("return x * 10;")
-    g = Function("g").takes(Int(), "x").returns(Sequence(Int()))
+    g = Function("g").takes(Int(), "x").returns(Vector(Int()))
     g.code("if(x % 2 == 0) return {}; else return { x + 1, x + 2 };")
     h = Function("h").takes(Int(), "x").returns(Int()).code("return -x;")
 
@@ -59,13 +60,13 @@ def test_system_basic():
 def test_system_in_product():
     ctx = Qit()
     f = Function("f").takes(Int(), "x").returns(Int()).code("return x * 10;")
-    g = Function("g").takes(Int(), "x").returns(Sequence(Int())).code("return { x + 1, x + 2 };")
+    g = Function("g").takes(Int(), "x").returns(Vector(Int())).code("return { x + 1, x + 2 };")
 
     v = Int().values(10, 20)
     s = System(v, (f,g))
 
     #i = Int().iterator = s.iterate_states(2)
-    P = Product((Int(), "x"), (Range(2), "y"))
+    P = Product((Int(), "x"), (Int(), "y"))
     P.set_iterator("x", s.iterate_states(2))
     P.set_iterator("y", s.iterate_states(2))
 
@@ -75,3 +76,11 @@ def test_system_in_product():
     assert pairs == set(result)
     assert len(result) == 484
 
+
+def test_system_rule_variable():
+    ctx = Qit()
+    x = Variable(Int(), "x")
+    f = Function("f").takes(Int(), "a").returns(Int()).reads(x).code("return x;")
+    s = System(Int().values(5), (f,))
+    result = ctx.run(s.iterate_states(3), args={"x": 5})
+    assert result == [5]

@@ -3,7 +3,7 @@
 
 from qit.base.system import RuleType
 from qit.build.writer import CppWriter
-from qit.base.atom import sort_variables
+from qit.base.utils import sorted_variables
 
 class CppBuilder(object):
 
@@ -29,24 +29,35 @@ class CppBuilder(object):
         self.included_filenames.add(filename)
         self.writer.line("#include \"{}\"", filename)
 
-    def build_collect(self, iterator, args):
+    def build_collect(self, obj, args):
         self.write_header()
-        iterator.declare_all(self)
+        obj.declare_all(self)
         self.main_begin()
         self.init_fifo()
         self.init_variables(args)
-        variable = iterator.make_iterator(self)
-        element = self.make_element(iterator.output_type.basic_type)
-        self.writer.line("while ({}.next({}))", variable, element)
-        self.writer.block_begin()
-        self.writer.line("qit::write(output, {});", element)
-        self.writer.block_end()
+        variable = obj.write_into_variable(self)
+        self.writer.line("qit::write(output, {});", variable)
         self.main_end()
+
+    def write_expression_into_variable(self, expr):
+        variable = self.new_id()
+        self.writer.line("{} {} = {};",
+                         expr.type.build_type(self),
+                         variable,
+                         expr.build_value(self))
+        return variable
+
+    def build_object(self, type, args):
+        args = ",".join(a.build_value(self) for a in args)
+        return "{}({})".format(type.build_type(self), args)
+
+    def write_iterator_write_method(self):
+        self.writer.line("QIT_ITERATOR_WRITE_METHOD")
 
     def make_sequence_from_iterator(self, iterator):
         result_variable = self.new_id("result")
-        self.writer.line("std::vector<{} > {};",
-                         iterator.output_type.get_element_type(self),
+        self.writer.line("{} {};",
+                         iterator.output_type.build_type(self),
                          result_variable)
         iterator_variable = iterator.make_iterator(self)
         element = self.make_element(iterator.output_type.basic_type)
@@ -69,9 +80,9 @@ class CppBuilder(object):
     def init_variables(self, args):
         for variable, value in sorted(args.items(), key=lambda v: v[0].name):
             self.writer.line("{} {}({});",
-                             variable.type.get_element_type(self),
+                             variable.type.build_type(self),
                              variable.name,
-                             value.get_code(self))
+                             value.build_value(self))
 
     def write_header(self):
         self.writer.line("/*")
@@ -103,13 +114,7 @@ class CppBuilder(object):
         self.id_counter += 1
         return "{}{}".format(prefix, self.id_counter)
 
-    def make_element(self, basic_type):
-        variable = self.new_id()
-        self.writer.line("{} {};",
-                         basic_type.get_element_type(self),
-                         variable)
-        return variable
-
+    """
     def declare_type_alias(self, type):
         if self.check_declaration_key(type):
             return
@@ -117,12 +122,54 @@ class CppBuilder(object):
             self.writer.line("typedef {} {};",
                              type.basic_type.get_element_type(self),
                              type.name)
+    """
 
     ## Method for multiple dispatch of base classes
 
-    def get_generator_iterator(self, transformation):
-        return "qit::GeneratorIterator<{} >" \
-                .format(transformation.generator.get_generator_type(self))
+    def declare_generator_iterator(self, iterator):
+        if self.check_declaration_key(iterator):
+            return
+        expression = iterator.generator
+        name = iterator.build_type(self)
+        element_type = expression.type.build_type(self)
+        self.writer.class_begin(name)
+        self.writer.line("public:")
+        self.writer.line("typedef {} value_type;", element_type)
+
+        variables = sorted_variables(iterator.get_variables())
+
+        # Args
+        for v in variables:
+            self.writer.line("const {} &{};",
+                             v.type.build_type(self),
+                             v.build_value(self))
+
+        #Constructor
+        if variables:
+            args = ",".join(
+                "const {} &{}".format(v.type.build_type(self),
+                                      v.build_value(self))
+                for v in variables)
+            inits = ",".join("{0}({0})".format(v.build_value(self))
+                for v in variables)
+            self.writer.line("{}({}) : {} {{}}", name, args, inits)
+
+        # Next
+        self.writer.line("bool next({} &out)", element_type)
+        self.writer.block_begin()
+        self.writer.line("out = {};", expression.build_value(self))
+        self.writer.line("return true;")
+        self.writer.block_end()
+
+        # Reset
+        self.writer.line("void reset()")
+        self.writer.block_begin()
+        self.writer.line("// Do nothing")
+        self.writer.block_end()
+
+        # Write
+        self.write_iterator_write_method()
+        self.writer.class_end()
 
     def make_basic_iterator(self, iterator, iterators=(), args=()):
         return self.make_iterator(iterator,
@@ -137,21 +184,6 @@ class CppBuilder(object):
             self.writer.line("{} {};", type, variable)
         return variable
 
-    def make_iterator(self, iterator, args):
-        return self.make_instance(iterator.get_iterator_type(self),
-                                  "i",
-                                  args)
-
-    def make_basic_generator(self, iterator, iterators=(), args=()):
-        return self.make_generator(iterator,
-                                  tuple(c.make_generator(self)
-                                     for c in iterators) + args)
-
-    def make_generator(self, iterator, args):
-        return self.make_instance(iterator.get_generator_type(self),
-                                  "i",
-                                  args)
-
     def check_declaration_key(self, key):
         if key in self.declaration_keys:
             return True
@@ -161,170 +193,154 @@ class CppBuilder(object):
 
     # Int
 
-    def get_int_type(self):
+    def build_int_type(self):
         return "int"
 
-    def make_int_instance(self, value):
+    def build_int_constant(self, value):
         assert isinstance(value, int)
         return str(value)
 
     # Bool
 
-    def get_bool_type(self):
+    def build_bool_type(self):
         return "bool"
 
-    def make_bool_instance(self, value):
+    def build_bool_constant(self, value):
         assert isinstance(value, bool)
         return "true" if value else "false"
 
     # Range
 
-    def get_range_iterator(self):
+    def build_range_iterator(self):
         return "qit::RangeIterator"
-
-    def get_range_generator(self):
-        return "qit::RangeGenerator"
 
     # Take
 
-    def get_take_iterator(self, take):
+    def build_take_iterator(self, take):
         return "qit::TakeIterator<{} >" \
-                .format(take.parent_iterator.get_iterator_type(self))
+                .format(take.parent_iterator.type.build_type(self))
 
     # Sort
 
-    def get_sort_iterator(self, sort):
+    def build_sort_iterator(self, sort):
         return "qit::SortIterator<{} >" \
-                .format(sort.parent_iterator.get_iterator_type(self))
+                .format(sort.parent_iterator.type.build_type(self))
 
     # Map
 
-    def get_map_iterator(self, map):
+    def build_map_iterator(self, map):
         return "qit::MapIterator<{}, {}, {} >" \
-                .format(map.parent_iterator.get_iterator_type(self),
-                        map.function.return_type.get_element_type(self),
+                .format(map.parent_iterator.type.build_type(self),
+                        map.function.return_type.build_type(self),
                         self.get_autoname(map.function, "f"))
 
     # Filter
 
-    def get_filter_iterator(self, filter):
+    def build_filter_iterator(self, filter):
         return "qit::FilterIterator<{}, {} >" \
-                .format(filter.parent_iterator.get_iterator_type(self),
+                .format(filter.parent_iterator.type.build_type(self),
                         self.get_autoname(filter.function, "f"))
 
-    # Product
+    # Struct
 
-    def make_product_instance(self, product, value):
-        assert len(value) == len(product.names)
-        args = ",".join(t.make_instance(self, v)
-                        for t, v in zip(product.basic_types, value))
-        return "{}({})".format(self.get_product_type(product), args)
+    def build_struct_type(self, struct):
+        return self.get_autoname(struct, "Struct")
 
-    def get_product_type(self, product):
-        if product.name is None:
-            return self.get_autoname(product.basic_type, "Product")
-        else:
-            return product.name
-
-    def get_product_iterator(self, iterator):
-        type_name = self.get_product_type(iterator.output_type)
-        return self.get_autoname(iterator, type_name + "Iterator")
-
-    def get_product_generator(self, generator):
-        type_name = self.get_product_type(generator.output_type)
-        return self.get_autoname(generator, type_name + "Generator")
-
-    def declare_product_class(self, product):
-        if self.check_declaration_key(product):
+    def declare_struct(self, struct):
+        if self.check_declaration_key(struct):
             return
-        product_type = self.get_product_type(product)
-        self.writer.class_begin(product_type)
+        struct_type = self.build_struct_type(struct)
+        self.writer.class_begin(struct_type)
         self.writer.line("public:")
 
         ## Attributes
-        for name, t in zip(product.names, product.types):
+        for name, t in zip(struct.names, struct.types):
             self.writer.line("{} {};",
-                             t.basic_type.get_element_type(self),
+                             t.build_type(self),
                              name)
 
-        args = ",".join("const {} &{}".format(t.get_element_type(self), name)
-                        for t, name in zip(product.basic_types, product.names))
+        args = ",".join("const {} &{}".format(t.build_type(self), name)
+                        for t, name in zip(struct.types, struct.names))
 
         consts = ",".join("{0}({0})".format(name)
-                        for name in product.names)
+                        for name in struct.names)
 
-        self.writer.line("{}({}) : {} {{}}", product_type, args, consts)
-        self.writer.line("{}() {{}}", product_type)
+        self.writer.line("{}({}) : {} {{}}", struct_type, args, consts)
+        self.writer.line("{}() {{}}", struct_type)
 
         # Write
         self.writer.line("void write(FILE *f) const")
         self.writer.block_begin()
-        for name in product.names:
+        for name in struct.names:
             self.writer.line("qit::write(f, {});", name)
         self.writer.block_end()
 
         # Operator <
-        self.writer.line("bool operator <(const {} &other) const", product_type)
+        self.writer.line("bool operator <(const {} &other) const", struct_type)
         self.writer.block_begin()
-        for name in product.names:
+        for name in struct.names:
             self.writer.if_begin("{0} < other.{0}", name)
             self.writer.line("return true;")
             self.writer.block_end()
             self.writer.if_begin("{0} == other.{0}", name)
-        for name in product.names:
+        for name in struct.names:
             self.writer.block_end()
         self.writer.line("return false;")
         self.writer.block_end()
 
         # Operator ==
-        self.writer.line("bool operator ==(const {} &other) const", product_type)
+        self.writer.line("bool operator ==(const {} &other) const", struct_type)
         self.writer.block_begin()
         self.writer.line("return {};",
                          " && ".join("({0} == other.{0})".format(name)
-                             for name in product.names))
+                             for name in struct.names))
         self.writer.block_end()
         self.writer.class_end()
 
-        ## Stream
-        """
-        self.writer.line("std::ostream& operator<<(std::ostream& os, const {}& v)",
-                  product_type)
-        self.writer.block_begin()
-        self.writer.line("os << \"{{\";")
-        for i, name in enumerate(product.names):
-            if i != 0:
-                self.writer.line("os << \",\";")
-            self.writer.line("os << v.{};", name)
-        self.writer.line("return os << \"}}\";")
-        self.writer.block_end()
-        """
+    def build_struct_constant(self, struct, value):
+        assert len(value) == len(struct.names)
+        args = ",".join(t.build_constant(self, v)
+                        for t, v in zip(struct.types, value))
+        return "{}({})".format(self.build_struct_type(struct), args)
 
+    # Vector
+
+    def build_vector_type(self, sequence):
+        return "std::vector<{} >".format(
+            sequence.element_type.build_type(self))
+
+    def build_vector_constant(self, sequence, value):
+        t = sequence.element_type
+        args = ",".join(t.build_constant(self, v) for v in value)
+        return "{{ {} }}".format(args)
+
+    # Product
 
     def declare_product_iterator(self, iterator):
         if self.check_declaration_key(iterator):
             return
 
-        product = iterator.output_type
-        iterator_type = iterator.get_iterator_type(self)
-        element_type = product.get_element_type(self)
+        struct = iterator.output_type
+        iterator_type = iterator.build_type(self)
+        element_type = struct.build_type(self)
 
         self.writer.class_begin(iterator_type)
         self.writer.line("public:")
         self.writer.line("typedef {} value_type;", element_type)
 
-        names_iterators = list(zip(product.names, iterator.iterators))
+        names_iterators = list(zip(struct.names, iterator.iterators))
 
         # Attributes
         for name, i in names_iterators:
             self.writer.line("{} {};",
-                             i.get_iterator_type(self),
+                             i.type.build_type(self),
                              name)
         self.writer.line("bool _inited;")
 
         # Contructor
-        args = [ "{} &{}".format(i.get_iterator_type(self), name)
+        args = [ "const {} &{}".format(i.type.build_type(self), name)
                  for name, i in names_iterators ]
-        constructors = [ "{0}({0})".format(name) for name in product.names ]
+        constructors = [ "{0}({0})".format(name) for name in struct.names ]
         constructors.append("_inited(false)")
         self.writer.line("{}({}) {} {}",
                          iterator_type,
@@ -338,16 +354,16 @@ class CppBuilder(object):
         self.writer.line("bool next({} &v)", element_type)
         self.writer.block_begin()
         self.writer.if_begin("_inited")
-        for i, name in enumerate(product.names):
+        for i, name in enumerate(struct.names):
             self.writer.if_begin("{0}.next(v.{0})", name)
             self.writer.line("return true;")
             self.writer.block_end()
-            if i != len(product.names) - 1:
+            if i != len(struct.names) - 1:
                 self.writer.line("{}.reset();", name)
                 self.writer.line("{0}.next(v.{0});", name)
         self.writer.line("return false;")
         self.writer.else_begin()
-        for name in product.names:
+        for name in struct.names:
             self.writer.if_begin("!{0}.next(v.{0})", name)
             self.writer.line("return false;")
             self.writer.block_end()
@@ -360,92 +376,57 @@ class CppBuilder(object):
         self.writer.line("void reset()")
         self.writer.block_begin()
         self.writer.line("_inited = false;")
-        for name in product.names:
+        for name in struct.names:
             self.writer.line("{}.reset();", name)
-
         self.writer.block_end()
+
+        # Write
+        self.write_iterator_write_method()
 
         self.writer.class_end()
 
-
-    def declare_product_generator(self, generator):
-        if self.check_declaration_key(generator):
-            return
-
-        product = generator.output_type
-        generator_type = generator.get_generator_type(self)
-        element_type = product.get_element_type(self)
-        self.writer.class_begin(generator_type)
-        self.writer.line("public:")
-        self.writer.line("typedef {} value_type;", element_type)
-
-        # Attributes
-        names_generators = list(zip(product.names, generator.generators))
-        for name, generator in names_generators:
-            self.writer.line("{} {};",
-                             generator.get_generator_type(self),
-                             name)
-
-        # Contructor
-        args = [ "{} &{}".format(generator.get_generator_type(self), name)
-                 for name, generator in names_generators ]
-        constructors = [ "{0}({0})".format(name) for name in product.names ]
-        self.writer.line("{}({}) {} {}",
-                         generator_type,
-                         ",".join(args),
-                         ":" if constructors else "",
-                         ",".join(constructors))
-        self.writer.block_begin()
-        self.writer.block_end()
-
-        # Next
-        self.writer.line("void generate({} &v)", element_type)
-        self.writer.block_begin()
-        for name in product.names:
-            self.writer.line("{0}.generate(v.{0});", name)
-        self.writer.block_end()
-
-        self.writer.class_end()
+    def write_struct_generator(self, struct, generators):
+        assert len(struct.names) == len(generators)
+        self.writer.line("{} s;", struct.build_type(self))
+        for name, generator in zip(struct.names, generators):
+            self.writer.line("s.{} = {};", name, generator.build_value(self))
+        self.writer.line("return s;")
 
     # Sequences
 
-    def make_sequence_instance(self, sequence, value):
-        basic_type = sequence.element_type.basic_type
-        args = ",".join(basic_type.make_instance(self, v) for v in value)
-        return "{{ {} }}".format(args)
-
-    def get_sequence_iterator(self, iterator):
+    def build_sequence_iterator(self, iterator):
         return "qit::SequenceIterator<{} >".format(
-            iterator.element_iterator.get_iterator_type(self))
+            iterator.element_iterator.type.build_type(self))
 
-    def get_sequence_generator(self, iterator):
-        return "qit::SequenceGenerator<{} >".format(
-            iterator.element_generator.get_generator_type(self))
-
-    def get_sequence_type(self, sequence):
-        return "std::vector<{} >".format(
-            sequence.element_type.get_element_type(self))
+    def write_sequence_generator(self, generator):
+        self.writer.line("{} v;", generator.return_type.build_type(self))
+        self.writer.line("size_t size = {};", generator.size.build_value(self))
+        self.writer.line("v.reserve(size);")
+        self.writer.line("for (int i = 0; i < size; i++)")
+        self.writer.block_begin()
+        self.writer.line("v.push_back({});",
+                         generator.element_generator.build_value(self))
+        self.writer.block_end()
+        self.writer.line("return v;")
 
     # Values
 
-    def get_values_iterator_type(self, iterator):
+    def build_values_iterator_type(self, iterator):
         return self.get_autoname(iterator, "ValuesIterator")
-
-    def get_values_generator_type(self, iterator):
-        return self.get_autoname(iterator, "ValuesGenerator")
 
     def declare_values_iterator(self, iterator):
         if self.check_declaration_key(iterator):
             return
         output_type = iterator.output_type
-        iterator_type = self.get_values_iterator_type(iterator)
-        element_type = output_type.get_element_type(self)
+        iterator_type = iterator.build_type(self)
+        element_type = output_type.build_type(self)
         self.writer.class_begin(iterator_type)
         self.writer.line("public:")
         self.writer.line("typedef {} value_type;", element_type)
-        variables = sort_variables(iterator.get_variables())
-        args = ",".join("const {} &{}".format(v.type.get_element_type(self), v.name)
-                        for v in variables)
+        variables = sorted_variables(iterator.get_variables())
+        args = ",".join("const {} &{}".format(
+                            v.type.build_type(self), v.build_value(self))
+                            for v in variables)
         inits = ",".join(("counter(0)",) +
                          tuple("{0}({0})".format(v.name) for v in variables))
         self.writer.line("{}({}) : {} {{}}", iterator_type, args, inits)
@@ -456,7 +437,7 @@ class CppBuilder(object):
         self.writer.block_begin()
         for i, value in enumerate(iterator.values):
             self.writer.line("case {}:", i)
-            self.writer.line("out = {};", value.get_code(self))
+            self.writer.line("out = {};", value.build_value(self))
             self.writer.line("counter++;")
             self.writer.line("return true;")
         self.writer.line("default:")
@@ -469,51 +450,40 @@ class CppBuilder(object):
         self.writer.line("counter = 0;")
         self.writer.block_end()
 
+        self.write_iterator_write_method()
+
         self.writer.line("protected:")
         self.writer.line("int counter;")
         for v in variables:
             self.writer.line(
-                    "const {} &{};", v.type.get_element_type(self), v.name)
+                    "const {} &{};", v.type.build_type(self), v.build_value(self))
         self.writer.class_end()
 
-    def declare_values_generator(self, generator):
+    def write_values_generator(self, generator):
         if self.check_declaration_key(generator):
             return
-        output_type = generator.output_type
-        generator_type = self.get_values_generator_type(generator)
-        element_type = output_type.get_element_type(self)
-        self.writer.class_begin(generator_type)
-        self.writer.line("public:")
-        self.writer.line("typedef {} value_type;", element_type)
-
-        self.writer.line("void generate(value_type &out)")
-        self.writer.block_begin()
         self.writer.line("switch(rand() % {})", len(generator.values))
         self.writer.block_begin()
         for i, value in enumerate(generator.values):
             self.writer.line("case {}:", i)
-            self.writer.line("out = {};", value.get_code(self))
-            self.writer.line("return;")
+            self.writer.line("return {};", value.build_value(self))
         self.writer.line("default:")
         self.writer.line("assert(0);")
         self.writer.block_end()
-        self.writer.block_end()
-
-        self.writer.class_end()
 
     # Function
 
-    def get_function_call_code(self, function_call):
+    def build_function_call(self, function_call):
         function = function_call.function
         function_name = self.get_autoname(function, "function")
-        variables = ",".join(v.get_code(self) for v in function.variables)
-        args = ",".join(e.get_code(self) for e in function_call.args)
+        variables = ",".join(v.build_value(self) for v in function.variables)
+        args = ",".join(e.build_value(self) for e in function_call.args)
         return "{}({})({})".format(function_name, variables, args)
 
-    def make_functor(self, function):
-        return self.make_instance(self.get_autoname(function, "function"),
-                                  "f",
-                                  [ v.get_code(self) for v in function.variables ])
+    def build_functor(self, function):
+        function_name = self.get_autoname(function, "function")
+        variables = ",".join(v.build_value(self) for v in function.variables)
+        return "{}({})".format(function_name, variables)
 
     def declare_function(self, function):
         if self.check_declaration_key((function, "function")):
@@ -529,16 +499,16 @@ class CppBuilder(object):
         if function.variables:
             self.writer.line("{}({}) : {} {{}}",
                              function_name,
-                             ",".join("const {} &{}".format(v.type.get_element_type(self),
+                             ",".join("const {} &{}".format(v.type.build_type(self),
                                                       v.name)
                                       for v in function.variables),
                              ",".join("{0}({0})".format(v.name)
                                       for v in function.variables))
 
-        params = [ "const {} &{}".format(c.get_element_type(self), name)
-                   for c, name in function.params ]
+        params = [ "const {} &{}".format(type.build_type(self), name)
+                   for type, name in function.params ]
         self.writer.line("{} operator()({})",
-                         function.return_type.get_element_type(self),
+                         function.return_type.build_type(self),
                          ",".join(params))
         self.writer.block_begin()
         function.write_code(self)
@@ -546,17 +516,13 @@ class CppBuilder(object):
 
         for variable in function.variables:
             self.writer.line("const {} &{};",
-                             variable.type.get_element_type(self),
+                             variable.type.build_type(self),
                              variable.name);
 
         self.writer.class_end()
 
-    def write_function_from_iterator(self, function, sequence):
-        if sequence:
-            variable = self.make_sequence_from_iterator(function.iterator)
-        else:
-            variable = self.make_element_from_iterator(function.iterator)
-        self.writer.line("return {};", variable)
+    def write_function_from_expression(self, expression):
+        self.writer.line("return {};", expression.build_value(self))
 
     def write_function_inline_code(self, function):
         self.writer.text(function.inline_code)
@@ -573,39 +539,43 @@ class CppBuilder(object):
         self.writer.line(call + ");")
 
     def get_function_declaration(self, function):
-        declaration = ""
-
+        args = ", ".join([ "const {} &{}".format(c.build_type(self), name)
+                   for c, name in function.params ])
         if function.return_type is not None:
-            declaration += function.return_type.get_element_type(self) + " "
+            return_type = function.return_type.build_type(self)
         else:
-            declaration += "void "
-
-        declaration += function.name + "("
-        declaration += ", ".join([ "const {} &{}".format(c.get_element_type(self), name)
-                   for c, name in function.params ])  # param names
-        return declaration + ")"
+            return_type = "void"
+        return "{} {}({})".format(return_type, function.name, args)
 
 
     # System
-
-    def get_system_iterator_type(self, iterator):
-        return self.get_autoname(iterator, "SystemIterator")
 
     def declare_system_iterator(self, iterator):
         if self.check_declaration_key(iterator):
            return
         system = iterator.system
-        iterator_type = self.get_system_iterator_type(iterator)
-        element_iterator_type = system.initial_states_iterator.get_iterator_type(self)
-        element_type = system.state_type.get_element_type(self)
+        iterator_type = iterator.build_type(self)
+        element_iterator_type = system.state_iterator.type.build_type(self)
+        element_type = system.state_type.build_type(self)
 
+        variables = sorted_variables(iterator.get_variables())
+        args = ",".join(
+            "const {} &{}".format(v.type.build_type(self),
+                                  v.build_value(self))
+            for v in variables)
+        inits = ",".join("{0}({0})".format(v.build_value(self))
+            for v in variables)
+        if args:
+            args = "," + args
+            inits = "," + inits
         self.writer.class_begin(iterator_type)
         self.writer.line("public:")
         self.writer.line("typedef {} value_type;", element_type)
-        self.writer.line("{}(const {} &iterator) "
+        self.writer.line("{}(const {} &iterator, int max_depth {}) "
                          ": inited(false), rule(0), depth(0), "
-                         "queue2_emit(0), iterator(iterator) {{}}",
-                         iterator_type, element_iterator_type)
+                         "max_depth(max_depth), queue2_emit(0), "
+                         " iterator(iterator) {} {{}}",
+                         iterator_type, element_iterator_type, args, inits)
 
         self.writer.line("bool next(value_type &out)")
         self.writer.block_begin()
@@ -620,7 +590,7 @@ class CppBuilder(object):
         self.writer.line("return true;")
         self.writer.block_end()
         self.writer.line("inited = true;")
-        self.writer.if_begin("0 == {}", iterator.depth.get_code(self))
+        self.writer.if_begin("0 == max_depth")
         self.writer.line("return false;")
         self.writer.block_end()
         self.writer.block_end()
@@ -632,7 +602,7 @@ class CppBuilder(object):
         self.writer.line("return false;")
         self.writer.block_end()
         self.writer.line("depth++;")
-        self.writer.if_begin("depth >= {}", iterator.depth.get_code(self))
+        self.writer.if_begin("depth >= max_depth")
         self.writer.line("return false;")
         self.writer.block_end()
         self.writer.line("std::swap(queue1, queue2);")
@@ -643,10 +613,14 @@ class CppBuilder(object):
         for i, rule in enumerate(system.rules):
             self.writer.line("case {}:", i)
             self.writer.block_begin()
-            self.writer.line("{} rule_fn;", self.get_autoname(rule, "f"), i)
+            rule_fn = self.make_instance(
+                self.get_autoname(rule, "f"),
+                "rule_fn",
+                [ v.build_value(self)
+                  for v in sorted_variables(rule.get_variables())])
             if system.get_rule_type(rule) == RuleType.one_to_one:
                 self.writer.line("rule++;")
-                self.writer.line("out = rule_fn(queue1.back());", element_type)
+                self.writer.line("out = {}(queue1.back());", rule_fn, element_type)
                 self.writer.if_begin("discovered.find(out) == discovered.end()")
                 self.writer.line("discovered.insert(out);")
                 self.writer.line("queue2.push_back(out);")
@@ -657,7 +631,7 @@ class CppBuilder(object):
                 assert system.get_rule_type(rule) == RuleType.one_to_many
                 self.writer.line("rule++;")
                 self.writer.line("std::vector<{} > v;", element_type)
-                self.writer.line("v = rule_fn(queue1.back());", element_type)
+                self.writer.line("v = {}(queue1.back());", rule_fn, element_type)
                 self.writer.line("size_t found = 0;")
                 self.writer.line("for (const auto &i : v)")
                 self.writer.block_begin()
@@ -694,13 +668,19 @@ class CppBuilder(object):
         self.writer.line("iterator.reset();")
         self.writer.block_end()
 
+        self.write_iterator_write_method()
+
         self.writer.line("protected:")
         self.writer.line("bool inited;")
         self.writer.line("int rule;")
         self.writer.line("int depth;")
+        self.writer.line("int max_depth;")
         self.writer.line("std::vector<{} > queue1;", element_type)
         self.writer.line("std::vector<{} > queue2;", element_type)
         self.writer.line("std::set<{} > discovered;", element_type)
         self.writer.line("size_t queue2_emit;", element_type)
         self.writer.line("{} iterator;", element_iterator_type)
+        for v in variables:
+            self.writer.line(
+                "const {} &{};", v.type.build_type(self), v.build_value(self))
         self.writer.class_end()

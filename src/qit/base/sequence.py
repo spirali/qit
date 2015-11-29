@@ -1,69 +1,30 @@
-from qit.base.type import Type
-from qit.base.iterator import Iterator
-from qit.base.generator import Generator
+from qit.base.iterator import IteratorType
 from qit.base.int import Int
-import struct
+from qit.base.vector import Vector
+from qit.base.domain import Domain
+from qit.base.function import Function
 
 
-class Sequence(Type):
+class Sequence(Domain):
 
-    struct = struct.Struct('<Q')
-    struct_size = struct.size
-
-    def __init__(self, element_type, size=None):
-        super().__init__()
-        self.element_type = element_type
-        if size is not None:
-            self.size = Int().check_value(size)
+    def __init__(self, domain, size):
+        vector = Vector(domain.type)
+        if domain.iterator:
+            iterator = SequenceIterator(domain.iterator, size).make()
         else:
-            self.size = None
-
-    @property
-    def basic_type(self):
-        return Sequence(self.element_type)
-
-    @property
-    def childs(self):
-        return super().childs + (self.element_type,)
-
-    def get_element_type(self, builder):
-        return builder.get_sequence_type(self)
-
-    def read(self, f):
-        data = f.read(self.struct_size)
-        if not data:
-            return None
-        size = self.struct.unpack(data)[0]
-        return [ self.element_type.read(f) for i in range(size) ]
-
-    def make_instance(self, builder, value):
-        return builder.make_sequence_instance(self, value)
-
-    def is_python_instance(self, obj):
-        return isinstance(obj, tuple) or isinstance(obj, list)
-
-    def transform_python_instance(self, obj):
-        return tuple(obj)
-
-    @property
-    def iterator(self):
-        if self.size is not None:
-            return SequenceIterator(self, self.size)
+            iterator = None
+        if domain.generator:
+            generator = SequenceGenerator(domain.generator, size)()
         else:
-            raise Exception("Unbound sequence does not have iterator")
-
-    @property
-    def generator(self):
-        if self.size is not None:
-            return SequenceGenerator(self, self.size)
-        else:
-            raise Exception("Unbound sequence does not have generator")
+            generator = None
+        super().__init__(vector, iterator, generator)
 
 
-class SequenceIterator(Iterator):
+class SequenceIterator(IteratorType):
 
-    def __init__(self, sequence, size=None):
-        super().__init__(sequence)
+    def __init__(self, element_iterator, size):
+        super().__init__(Vector(element_iterator.type.output_type))
+        self.element_iterator = element_iterator
         self.size = Int().check_value(size)
 
     @property
@@ -71,34 +32,24 @@ class SequenceIterator(Iterator):
         return super().childs + (self.size, self.element_iterator)
 
     @property
-    def element_iterator(self):
-        return self.output_type.element_type.iterator
+    def constructor_args(self):
+        return (self.element_iterator, self.size)
 
-    def get_iterator_type(self, builder):
-        return builder.get_sequence_iterator(self)
-
-    def make_iterator(self, builder):
-        return builder.make_basic_iterator(
-                self, (self.element_iterator,), (self.size.get_code(builder),))
+    def build_type(self, builder):
+        return builder.build_sequence_iterator(self)
 
 
-class SequenceGenerator(Generator):
+class SequenceGenerator(Function):
 
-    def __init__(self, sequence, size=None):
-        super().__init__(sequence)
+    def __init__(self, element_generator, size):
+        super().__init__()
+        self.returns(Vector(element_generator.type))
+        self.element_generator = element_generator
         self.size = Int().check_value(size)
 
     @property
     def childs(self):
         return super().childs + (self.size, self.element_generator)
 
-    @property
-    def element_generator(self):
-        return self.output_type.element_type.generator
-
-    def get_generator_type(self, builder):
-        return builder.get_sequence_generator(self)
-
-    def make_generator(self, builder):
-        return builder.make_basic_generator(
-                self, (self.element_generator,), (self.size.get_code(builder),))
+    def write_code(self, builder):
+        builder.write_sequence_generator(self)

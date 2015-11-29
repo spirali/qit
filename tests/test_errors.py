@@ -1,7 +1,7 @@
 from testutils import init, Qit
 init()
 
-from qit import Range, Variable, Int, Sequence, Function
+from qit import Range, Variable, Int, Vector, Function
 from qit.base.exception import QitException
 import pytest
 
@@ -9,7 +9,7 @@ def test_range_invalid_arg():
     with pytest.raises(QitException):
         Range("fff")
 
-    x = Variable(Sequence(Int()), "x")
+    x = Variable(Vector(Int()), "x")
     with pytest.raises(QitException):
         Range(x)
 

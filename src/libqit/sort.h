@@ -9,31 +9,35 @@ template <typename T>
 class SortIterator {
     public:
 	typedef typename T::value_type value_type;
-	SortIterator(T &iterator) {
-        value_type value;
-		while (iterator.next(value)) {
-	        vector.push_back(value);
-        }
-		this->iterator = vector.begin();
+	SortIterator() : index(0) {}
+	SortIterator(const T &iterator) {
+		value_type value;
+		T i(iterator);
+		while (i.next(value)) {
+			vector.push_back(value);
+		}
+		index = 0;
 		std::sort(vector.begin(), vector.end());
 	}
 	
 	bool next(value_type &out) {
-		if (iterator == vector.end()) {
+		if (index >= vector.size()) {
 		    return false;
 		}
-		out = *iterator;
-		iterator++;
+		out = vector[index];
+		index++;
 		return true;
 	}
 
 	void reset() {
-		iterator = vector.begin();
+		index = 0;
 	}
+
+	QIT_ITERATOR_WRITE_METHOD
 
     protected:
     typename std::vector<value_type> vector;
-    typename std::vector<value_type>::iterator iterator;
+    int index;
 };
 
 }

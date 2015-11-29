@@ -33,7 +33,7 @@ def test_range_function_iterate():
     c = Qit()
 
     x = Variable(Int(), "x")
-    r = Range(x).iterate()
+    r = Range(x).iterate().to_vector()
     f = r.make_function()
     assert [[], [0], [0,1], [0,1,2]] == c.run(Range(4).iterate().map(f))
 
@@ -42,7 +42,7 @@ def test_range_function_generate():
     c = Qit()
 
     x = Variable(Int(), "x")
-    r = Range(f(x)).generate().take(2)
+    r = Range(f(x)).generate().take(2).to_vector()
     f = r.make_function()
     result = c.run(Range(10).iterate().map(f))
 

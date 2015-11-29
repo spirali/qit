@@ -1,5 +1,10 @@
 
 #ifndef QIT_QIT_H
+#define QIT_QIT_H
+
+// Basic
+#include "write.h"
+#include "iterator.h"
 
 // Types
 #include "range.h"

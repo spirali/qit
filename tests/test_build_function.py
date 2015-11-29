@@ -1,13 +1,13 @@
 from testutils import Qit, init
 init()
 
-from qit import Range, Variable, Int, Sequence, Function
+from qit import Range, Variable, Int, Sequence, Function, Vector
 
 def test_function_in_function():
     c = Qit()
     x = Variable(Int(), "x")
     r = Range(x).iterate()
-    f = r.make_function(return_type=Sequence(Int()))
+    f = r.make_function()
 
     r2 = Range(x).iterate().map(f)
     f = r2.make_function((x,))
@@ -32,7 +32,7 @@ def test_outer_variables_in_fn_iterator():
 
     plus_1 = Function().takes(Int(), "x").returns(Int()).code("return x + 1;")
     P = Range(plus_1(x)) * Range(y)
-    f = P.iterate().make_function((x,))
+    f = P.iterate().to_vector().make_function((x,))
 
     result = c.run(Range(3).iterate().map(f), args={"y": 2})
     assert [[(0, 0), (0, 1)],

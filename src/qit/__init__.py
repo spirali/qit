@@ -5,8 +5,12 @@ from qit.base.qit import Qit
 from qit.base.atom import Variable
 
 # Types
-from qit.base.int import Int
 from qit.base.bool import Bool
+from qit.base.int import Int
+from qit.base.struct import Struct
+from qit.base.vector import Vector
+
+# Domains
 from qit.base.range import Range
 from qit.base.product import Product
 from qit.base.sequence import Sequence
