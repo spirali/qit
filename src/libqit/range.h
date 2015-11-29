@@ -8,38 +8,42 @@ namespace qit {
 class RangeIterator {
     public:
 	typedef int value_type;
-	RangeIterator(value_type stop)
-	    : stop(stop), value(0) {}
+	RangeIterator(value_type start, value_type end, value_type step)
+	    : end(end), start(start), value(start), step(step) {}
 
 	bool next(value_type &out) {
-	    if (value == stop) {
-		return false;
+	    if (value >= end) {
+		    return false;
 	    }
-	    out = value++;
+	    out = value;
+	    value += step;
 	    return true;
 	}
 
 	void reset() {
-	    value = 0;
+	    value = start;
 	}
 
     protected:
-	value_type stop;
+    value_type start;
+	value_type end;
+	value_type step;
 	value_type value;
 };
 
 class RangeGenerator {
     public:
 	typedef int value_type;
-	RangeGenerator(value_type stop)
-	    : stop(stop) {}
+	RangeGenerator(value_type start, value_type end)
+	    : start(start), end(end) {}
 
 	void generate(value_type &out) {
-	    out = rand() % stop;
+	    out = (rand() % (end - start)) + start;
 	}
 
     protected:
-	value_type stop;
+    value_type start;
+	value_type end;
 };
 
 template<typename T> void write(FILE *out, T value)

@@ -12,4 +12,4 @@ def test_build_range():
     v = i.make_iterator(builder)
     t = i.get_iterator_type(builder)
 
-    assert "{} {}(10);\n".format(t, v) == builder.writer.get_string()
+    assert "{} {}(0,10,1);\n".format(t, v) == builder.writer.get_string()
