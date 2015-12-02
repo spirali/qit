@@ -2,6 +2,7 @@
 from qit.base.expression import Expression
 from qit.base.exception import InvalidConstant
 
+
 class Atom(Expression):
 
     def is_atom(self):
@@ -26,6 +27,7 @@ class Variable(Atom):
     def __repr__(self):
         return "Variable({}, {})".format(self.type, repr(self.name))
 
+
 class Constant(Atom):
 
     def __init__(self, type, value):
@@ -36,3 +38,9 @@ class Constant(Atom):
 
     def build_value(self, builder):
         return self.type.build_constant(builder, self.value)
+
+    def is_constant_value(self, value):
+        return self.value == value
+
+    def __repr__(self):
+        return "Constant({}, {})".format(self.type, repr(self.value))

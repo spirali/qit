@@ -3,7 +3,8 @@ from qit.base.domain import Domain
 from qit.base.iterator import IteratorType
 from qit.base.struct import Struct
 from qit.base.function import Function
-
+from qit.base.int import Int
+from qit.functions.int import multiplication_n
 
 class Product(Domain):
 
@@ -20,46 +21,28 @@ class Product(Domain):
             else:
                 domains.append(arg.make_domain())
                 struct_args.append(arg.type)
-
-        iterators = tuple(d.iterator for d in domains)
-        generators = tuple(d.generator for d in domains)
-        super().__init__(Struct(*struct_args))
-
+        type = Struct(*struct_args)
+        super().__init__(
+                type,
+                self._make_iterator(type, domains),
+                self._make_generator(type, domains),
+                self._make_size(domains))
         self.domains = tuple(domains)
-        self.iterators = iterators
-        self._update_iterator()
-        self.generators = generators
-        self._update_generator()
 
-    def set_iterator(self, name, iterator):
-        index = self.type.names.index(name)
-        iterators = list(self.iterators)
-        iterators[index] = iterator
-        self.iterators = tuple(iterators)
-        self._update_iterator()
+    def _make_iterator(self, type, domains):
+        iterators = [ d.iterator for d in domains ]
+        if all(iterators):
+            return ProductIterator(type, iterators).make()
 
-    def set_generator(self, name, generator):
-        index = self.type.names.index(name)
-        generators = list(self.generators)
-        generators[index] = generator
-        self.generators = tuple(generators)
-        self._update_generator()
+    def _make_generator(self, type, domains):
+        generators = [ d.generator for d in domains ]
+        if all(generators):
+            return ProductGenerator(type, generators)()
 
-    def set(self, name, domain):
-        self.set_iterator(name, domain.iterator)
-        self.set_generator(name, domain.generator)
-
-    def _update_iterator(self):
-        if all(self.iterators):
-            self.iterator = ProductIterator(self.type, self.iterators).make()
-        else:
-            self.iterator = None
-
-    def _update_generator(self):
-        if all(self.iterators):
-            self.generator = ProductGenerator(self.type, self.generators)()
-        else:
-            self.generator = None
+    def _make_size(self, domains):
+        sizes = [ d.size for d in domains ]
+        if all(sizes):
+            return multiplication_n(len(sizes))(*sizes)
 
     def __mul__(self, other):
         args = list(zip(self.domains, self.type.names))

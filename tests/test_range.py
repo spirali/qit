@@ -75,3 +75,15 @@ def test_min_step_range_iterate_variables():
     expr = Range(x, y, z).iterate()
     c = Qit()
     assert list(range(10, 20, 4)) == c.run(expr, args={"x": 10, "y": 20, "z": 4})
+
+def test_range_size():
+    ctx = Qit()
+    r = Range(11)
+    assert ctx.run(r.size) == 11
+
+    start = Variable(Int(), "start")
+    end = Variable(Int(), "end")
+    step = Variable(Int(), "step")
+    r = Range(start, end, step)
+    assert ctx.run(r.size, args={ "start" : 5, "end" : 10, "step" : 1 }) == 5
+    assert ctx.run(r.size, args={ "start" : 5, "end" : 10, "step" : 2 }) == 2

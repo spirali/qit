@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Int, Range, Sequence, System
+from qit import Int, Range, System, Domain
 from qit import Function, Product, Vector, Variable
 import itertools
 
@@ -66,9 +66,8 @@ def test_system_in_product():
     s = System(v, (f,g))
 
     #i = Int().iterator = s.iterate_states(2)
-    P = Product((Int(), "x"), (Int(), "y"))
-    P.set_iterator("x", s.iterate_states(2))
-    P.set_iterator("y", s.iterate_states(2))
+    D = Domain(Int(), iterator=s.iterate_states(2))
+    P = Product(D, D)
 
     values = ctx.run(s.iterate_states(2).take(1000))
     pairs = set(itertools.product(values, values))

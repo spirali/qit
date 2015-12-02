@@ -18,7 +18,9 @@ class Function(QitObject):
     def is_function(self):
         return True
 
-    def takes(self, collection, name):
+    def takes(self, collection, name=None):
+        if name is None:
+            name = "p" + str(len(self.params))
         self.params = self.params + ((collection, name),)
         return self
 

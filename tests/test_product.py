@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Range, Product, Variable, Int
+from qit import Range, Product, Variable, Int, Domain
 import itertools
 
 def test_product_iterate():
@@ -42,33 +42,6 @@ def test_product_no_name():
     p = Product(Range(2), Range(3))
     result = Qit().run(p.iterate())
     assert set(itertools.product(range(2), range(3))) == set(result)
-
-def test_product_copy():
-    p = Product((Range(4), "x"), (Range(4), "y"))
-
-    p2 = p.copy()
-    p2.set("x", Range(2))
-
-    q = Product((p, "p1"), (p, "p2"))
-
-    q2 = q.copy()
-    q2.set_generator("p2", p2.generator)
-    q2.set_iterator("p1", p2.iterator)
-
-    v_r4 = list(range(4))
-    v_r2 = list(range(2))
-    v_p = list(itertools.product(v_r4, v_r4))
-    v_p2 = list(itertools.product(v_r2, v_r4))
-    v_q2_generator = set(itertools.product(v_p, v_p2))
-    v_q2_iterator = set(itertools.product(v_p2, v_p))
-
-    c = Qit()
-    for v in c.run(q2.generate().take(200)):
-        assert v in v_q2_generator
-
-    result = c.run(q2.iterate())
-    assert len(v_q2_iterator) == len(result)
-    assert v_q2_iterator == set(result)
 
 def test_product_big():
     R2 = Range(2)
@@ -129,19 +102,21 @@ def test_product_variables():
 def test_product_generator_iterator_variables():
     x = Variable(Int(), "x")
     y = Variable(Int(), "x")
-    z = Variable(Int(), "z")
 
-    p = Product((Range(z), "a"), (Range(z), "b"))
-    p.set_iterator("a", Range(x).iterator)
-    p.set_generator("b", Range(y).generator)
+    p = Product((Range(x), "x"), (Range(y), "y"))
 
     assert set() == set(p.get_variables())
-    assert {z, x} == set(p.iterate().get_variables())
-    assert {z, y} == set(p.generate().get_variables())
+    assert {x, y} == set(p.iterate().get_variables())
+    assert {x, y} == set(p.generate().get_variables())
 
-    p.set_iterator("b", Range(12).iterator)
-    p.set_generator("a", Range(12).generator)
+def test_product_size():
+    ctx = Qit()
+    r1 = Range(4)
+    r2 = Range(Variable(Int(), "x"))
+    r3 = Range(Variable(Int(), "y"))
+    assert ctx.run((r1 * r2 * r3).size, args={"x": 10, "y": 2}) == 80
 
-    assert set() == set(p.get_variables())
-    assert {x} == set(p.iterate().get_variables())
-    assert {y} == set(p.generate().get_variables())
+def test_product_size_none():
+    r1 = Range(4)
+    r2 = Domain(Int())
+    assert (r1 * r2).size is None

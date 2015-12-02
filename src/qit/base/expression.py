@@ -13,6 +13,9 @@ class Expression(QitObject):
     def is_expression(self):
         return True
 
+    def is_constant_value(self, value):
+        return False
+
     def write_into_variable(self, builder):
         return builder.write_expression_into_variable(self)
 

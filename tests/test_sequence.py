@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Range, Sequence, Int, Variable
+from qit import Range, Sequence, Int, Variable, Domain
 import itertools
 
 def test_sequence_collect():
@@ -51,3 +51,14 @@ def test_sequence_variable():
     expected = set(itertools.product(rr, rr))
     assert set(map(tuple, result)) == expected
     assert len(result) == len(expected)
+
+def test_sequence_size():
+    ctx = Qit()
+    p = Range(2) * Range(5)
+    s = Sequence(p, 4)
+    assert ctx.run(s.size) == 10000
+
+def test_sequence_size_null():
+    d = Domain(Int())
+    s = Sequence(d, 4)
+    assert s.size is None

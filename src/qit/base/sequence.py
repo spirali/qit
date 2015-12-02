@@ -3,21 +3,29 @@ from qit.base.int import Int
 from qit.base.vector import Vector
 from qit.base.domain import Domain
 from qit.base.function import Function
-
+from qit.functions.int import power
 
 class Sequence(Domain):
 
     def __init__(self, domain, size):
         vector = Vector(domain.type)
-        if domain.iterator:
+        if domain.iterator is not None:
             iterator = SequenceIterator(domain.iterator, size).make()
         else:
             iterator = None
-        if domain.generator:
+
+        if domain.generator is not None:
             generator = SequenceGenerator(domain.generator, size)()
         else:
             generator = None
-        super().__init__(vector, iterator, generator)
+
+        if domain.size is not None:
+            size = Int().check_value(size)
+            domain_size = power(domain.size, size)
+        else:
+            domain_size = None
+
+        super().__init__(vector, iterator, generator, domain_size)
 
 
 class SequenceIterator(IteratorType):

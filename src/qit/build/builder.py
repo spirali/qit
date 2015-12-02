@@ -37,6 +37,7 @@ class CppBuilder(object):
         self.init_variables(args)
         variable = obj.write_into_variable(self)
         self.writer.line("qit::write(output, {});", variable)
+        self.writer.line("fclose(output);")
         self.main_end()
 
     def write_expression_into_variable(self, expr):

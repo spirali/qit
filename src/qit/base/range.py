@@ -2,7 +2,9 @@
 from qit.base.int import Int
 from qit.base.iterator import IteratorType
 from qit.base.domain import Domain
+from qit.base.function import Function
 from qit.functions.random import rand_int
+
 
 class Range(Domain):
 
@@ -17,7 +19,24 @@ class Range(Domain):
 
         iterator = RangeIterator(start, end, step).make()
         generator = rand_int(start, end)
-        super().__init__(Int(), iterator, generator)
+
+        if start.is_constant_value(0) and step.is_constant_value(1):
+            size = end
+        else:
+            size = range_size(start, end, step)
+
+        super().__init__(Int(),
+                         iterator,
+                         generator,
+                         size)
+
+
+range_size = Function()
+range_size.takes(Int(), "start")
+range_size.takes(Int(), "end")
+range_size.takes(Int(), "step")
+range_size.returns(Int())
+range_size.code("return (end - start) / step;")
 
 
 class RangeIterator(IteratorType):
