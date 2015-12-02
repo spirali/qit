@@ -11,6 +11,7 @@ from qit.base.struct import Struct
 from qit.base.vector import Vector
 
 # Domains
+from qit.base.domain import Domain
 from qit.base.range import Range
 from qit.base.product import Product
 from qit.base.sequence import Sequence

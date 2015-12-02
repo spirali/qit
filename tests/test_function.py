@@ -56,3 +56,9 @@ def test_apply_function_constant():
     c = Qit()
     f = Function().takes(Int(), "a").returns(Int()).code("return a + 10;")
     assert list(range(16)) == c.run(Range(f(6)).iterate())
+
+def test_function_constant():
+    c = Qit()
+    f = Int().const(7).make_function()
+    result = c.run(f())
+    assert result == 7
