@@ -11,6 +11,7 @@ class IteratorType(Type):
     struct = struct.Struct('<c')
     struct_size = struct.size
 
+    autoname_prefix = "Iterator"
 
     def __init__(self, output_type):
         self.output_type = output_type

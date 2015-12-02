@@ -5,6 +5,9 @@ from qit.base.atom import Constant
 
 class Type(QitObject):
 
+    autoname_prefix = "Type"
+
+
     def __init__(self):
         pass
 
@@ -12,7 +15,7 @@ class Type(QitObject):
         return True
 
     def build_type(self, builder):
-        return builder.get_autoname(self, "Type")
+        return builder.get_autoname(self)
 
     def declare(self, builder):
         pass

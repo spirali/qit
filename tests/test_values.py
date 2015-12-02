@@ -20,7 +20,8 @@ def test_int_values():
     assert result == [ 30, 20, 10 ]
 
     result = Qit().run(v.generate().take(100))
-    assert all(i in (30, 20, 10) for i in result)
+    for i in result:
+        assert i in (30, 20, 10)
 
 
 def test_product_values():

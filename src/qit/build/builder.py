@@ -12,15 +12,15 @@ class CppBuilder(object):
         self.writer = CppWriter()
         self.id_counter = 100
         self.declaration_keys = []
-        self.autonames = []
+        self.autonames = {}
         self.included_filenames = set()
 
-    def get_autoname(self, key, prefix):
-        for k, name in self.autonames:
-            if key == k:
-                return name
-        name = self.new_id(prefix)
-        self.autonames.append((key, name))
+    def get_autoname(self, obj):
+        name = self.autonames.get(obj)
+        if name is not None:
+            return name
+        name = self.new_id(obj.autoname_prefix)
+        self.autonames[obj] = name
         return name
 
     def include_filename(self, filename):
@@ -232,19 +232,19 @@ class CppBuilder(object):
         return "qit::MapIterator<{}, {}, {} >" \
                 .format(map.parent_iterator.type.build_type(self),
                         map.function.return_type.build_type(self),
-                        self.get_autoname(map.function, "f"))
+                        self.get_autoname(map.function))
 
     # Filter
 
     def build_filter_iterator(self, filter):
         return "qit::FilterIterator<{}, {} >" \
                 .format(filter.parent_iterator.type.build_type(self),
-                        self.get_autoname(filter.function, "f"))
+                        self.get_autoname(filter.function))
 
     # Struct
 
     def build_struct_type(self, struct):
-        return self.get_autoname(struct, "Struct")
+        return self.get_autoname(struct)
 
     def declare_struct(self, struct):
         if self.check_declaration_key(struct):
@@ -412,7 +412,7 @@ class CppBuilder(object):
     # Values
 
     def build_values_iterator_type(self, iterator):
-        return self.get_autoname(iterator, "ValuesIterator")
+        return self.get_autoname(iterator)
 
     def declare_values_iterator(self, iterator):
         if self.check_declaration_key(iterator):
@@ -460,8 +460,6 @@ class CppBuilder(object):
         self.writer.class_end()
 
     def write_values_generator(self, generator):
-        if self.check_declaration_key(generator):
-            return
         self.writer.line("switch(rand() % {})", len(generator.values))
         self.writer.block_begin()
         for i, value in enumerate(generator.values):
@@ -475,24 +473,24 @@ class CppBuilder(object):
 
     def build_function_call(self, function_call):
         function = function_call.function
-        function_name = self.get_autoname(function, "function")
+        function_name = self.get_autoname(function)
         variables = ",".join(v.build_value(self) for v in function.variables)
         args = ",".join(e.build_value(self) for e in function_call.args)
         return "{}({})({})".format(function_name, variables, args)
 
     def build_functor(self, function):
-        function_name = self.get_autoname(function, "function")
+        function_name = self.get_autoname(function)
         variables = ",".join(v.build_value(self) for v in function.variables)
         return "{}({})".format(function_name, variables)
 
     def declare_function(self, function):
-        if self.check_declaration_key((function, "function")):
+        if self.check_declaration_key(function):
             return
 
         if function.is_external():
             self.include_filename(self.env.get_function_filename(function))
 
-        function_name = self.get_autoname(function, "function")
+        function_name = self.get_autoname(function)
         self.writer.class_begin(function_name)
         self.writer.line("public:")
 
@@ -614,7 +612,7 @@ class CppBuilder(object):
             self.writer.line("case {}:", i)
             self.writer.block_begin()
             rule_fn = self.make_instance(
-                self.get_autoname(rule, "f"),
+                self.get_autoname(rule),
                 "rule_fn",
                 [ v.build_value(self)
                   for v in sorted_variables(rule.get_variables())])

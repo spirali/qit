@@ -6,6 +6,7 @@ class QitObject(HashableEqMixin):
 
     childs = ()
     bounded_variables = frozenset()
+    autoname_prefix = "QitObject"
 
     def is_type(self):
         return False

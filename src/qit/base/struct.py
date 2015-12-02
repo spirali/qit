@@ -3,6 +3,8 @@ from qit.base.type import NamedType
 
 class Struct(NamedType):
 
+    autoname_prefix = "Struct"
+
     def __init__(self, *args):
         self.name = None
         names = []

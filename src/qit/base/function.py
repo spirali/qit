@@ -5,6 +5,8 @@ from qit.base.utils import validate_variables, sorted_variables
 
 class Function(QitObject):
 
+    autoname_prefix = "Function"
+
     def __init__(self, name=None):
         self.name = name
         self.params = ()
