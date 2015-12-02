@@ -7,7 +7,8 @@ namespace qit {
 template<typename T, typename F> class FilterIterator {
 	public:
 		typedef typename T::value_type value_type;
-		FilterIterator(const T &iterator, const F &functor) : iterator(iterator) {}
+		FilterIterator(const T &iterator, const F &functor)
+			: iterator(iterator), functor(functor) {}
 
 		bool next(value_type &out) {
 		    typename T::value_type v;
@@ -31,7 +32,7 @@ template<typename T, typename F> class FilterIterator {
 
 	protected:
 		T iterator;
-        F functor;
+		F functor;
 };
 
 }

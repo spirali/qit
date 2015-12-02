@@ -2,7 +2,7 @@ import pytest
 from testutils import Qit, init
 init()
 
-from qit import Range, Function, Bool, Int, Product
+from qit import Range, Function, Bool, Int, Product, Variable
 
 
 def test_filter_empty():
@@ -40,3 +40,10 @@ def test_filter_product():
     f = Function("filter").returns(Bool()).takes(p.type, "p").code("return p.x == p.y;")
 
     q.run(p.iterate().filter(f)) == [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
+
+def test_filter_free_variables():
+    ctx = Qit()
+    x = Variable(Int(), "x")
+    f = Function().takes(Int(), "a").returns(Bool()).reads(x).code("return a != x;")
+    result = ctx.run(Range(5).iterate().filter(f), args={"x" : 3})
+    assert result == [0, 1, 2, 4]
