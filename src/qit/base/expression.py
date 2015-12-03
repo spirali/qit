@@ -22,3 +22,6 @@ class Expression(QitObject):
     def make_function(self, params=None):
         from qit.base.function import FunctionFromExpression
         return FunctionFromExpression(self, params)
+
+    def get_expression(self):
+        return self

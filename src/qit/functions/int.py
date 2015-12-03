@@ -20,3 +20,11 @@ power.code("""
     }
     return result;
 """)
+
+identity = Function().takes(Int(), "a").returns(Int()).code("return a;")
+
+subtract = Function().takes(Int(), "a").takes(Int(), "b").returns(Int())
+subtract.code("return a - b;")
+
+add = Function().takes(Int(), "a").takes(Int(), "b").returns(Int())
+add.code("return a + b;")

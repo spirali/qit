@@ -49,10 +49,10 @@ def test_create_files_auto():
 
 def test_qit_declaration():
     p = Product(Range(1), Range(1))
-    f = Function("f").takes(p.type, "p").returns(Int())
-    g = Function("g").takes(Int(), "x").returns(Int())
+    f = Function("f").takes(p.type, "p").returns(Int()).from_file("x.h")
+    g = Function("g").takes(Int(), "x").returns(Int()).from_file("y.h")
 
     q = Qit()
 
-    assert q.declarations(g, False) == ["int g(const int &x)"]
-    assert len(q.declarations(p.iterate().map(f).map(g).map(g), False)) == 2
+    assert q.declarations(g) == ["int g(const int &x)"]
+    assert len(q.declarations(p.iterate().map(f).map(g).map(g))) == 2

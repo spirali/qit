@@ -1,4 +1,4 @@
-from qit.base.iterator import IteratorType
+from qit.base.iterator import Iterator
 from qit.base.int import Int
 from qit.base.vector import Vector
 from qit.base.domain import Domain
@@ -9,18 +9,28 @@ class Sequence(Domain):
 
     def __init__(self, domain, size):
         vector = Vector(domain.type)
+        size = Int().value(size)
+
         if domain.iterator is not None:
-            iterator = SequenceIterator(domain.iterator, size).make()
+            iterator = SequenceIterator(domain.iterator, size)
         else:
             iterator = None
 
         if domain.generator is not None:
-            generator = SequenceGenerator(domain.generator, size)()
+            generator = Function().returns(vector).code("""
+                {{type}} result;
+                size_t size = {{size}};
+                result.reserve(size);
+                for(size_t i = 0; i < size; i++) {
+                    result.push_back({{generator}});
+                }
+                return result;
+            """, generator=domain.generator, size=size, type=vector)()
         else:
             generator = None
 
         if domain.size is not None:
-            size = Int().check_value(size)
+            size = Int().value(size)
             domain_size = power(domain.size, size)
         else:
             domain_size = None
@@ -28,36 +38,49 @@ class Sequence(Domain):
         super().__init__(vector, iterator, generator, domain_size)
 
 
-class SequenceIterator(IteratorType):
+class SequenceIterator(Iterator):
 
-    def __init__(self, element_iterator, size):
-        super().__init__(Vector(element_iterator.type.output_type))
-        self.element_iterator = element_iterator
-        self.size = Int().check_value(size)
+    def __init__(self, iterator, size):
+        size = Int().value(size)
+        itype = Vector(iterator.itype)
+        element_type = Vector(iterator.element_type)
 
-    @property
-    def childs(self):
-        return super().childs + (self.size, self.element_iterator)
+        init_expr = Function().returns(itype).code("""
+            return {{itype}}({{size}}, {{init_expr}});
+        """, itype=itype, size=size, init_expr=iterator.init_expr)()
 
-    @property
-    def constructor_args(self):
-        return (self.element_iterator, self.size)
+        super().__init__(itype, element_type, init_expr)
 
-    def build_type(self, builder):
-        return builder.build_sequence_iterator(self)
+        self.next_fn.code("""
+            {{itype}} result = iter;
+            size_t size = result.size();
+            size_t i;
+            for(i = 0; i < size - 1; i++) {
+                result[i] = {{next_fn}}(result[i]);
+                if ({{is_valid_fn}}(result[i])) {
+                    return result;
+                } else {
+                    result[i] = {{init_expr}};
+                }
+            }
+            result[i] = {{next_fn}}(result[i]);
+            return result;
+        """, itype=itype, next_fn=iterator.next_fn,
+        is_valid_fn=iterator.is_valid_fn, init_expr=iterator.init_expr)
 
+        self.is_valid_fn.code("""
+            if (iter.begin() == iter.end()) {
+                return false;
+            }
+            return std::all_of(iter.begin(), iter.end(), {{is_valid_fn}});
+        """, is_valid_fn=iterator.is_valid_fn)
 
-class SequenceGenerator(Function):
-
-    def __init__(self, element_generator, size):
-        super().__init__()
-        self.returns(Vector(element_generator.type))
-        self.element_generator = element_generator
-        self.size = Int().check_value(size)
-
-    @property
-    def childs(self):
-        return super().childs + (self.size, self.element_generator)
-
-    def write_code(self, builder):
-        builder.write_sequence_generator(self)
+        self.value_fn.code("""
+            {{type}} result;
+            size_t size = iter.size();
+            result.reserve(size);
+            for(size_t i = 0; i < size; i++) {
+                result.push_back({{value_fn}}(iter[i]));
+            }
+            return result;
+        """, type=element_type, value_fn=iterator.value_fn)

@@ -13,12 +13,14 @@ def test_range_invalid_arg():
     with pytest.raises(QitException):
         Range(x)
 
+""" NOW DISABLED
 def test_inconsistent_variables():
     x1 = Variable(Int(), "x")
     x2 = Variable(Int() * Int(), "x")
 
     with pytest.raises(QitException):
         Function().reads(x1, x2)
+"""
 
 def test_unbound_variables():
     ctx = Qit()

@@ -13,12 +13,12 @@ def test_sequence_collect():
     pp = list(itertools.product(rr, rr))
     ss = set(itertools.product(pp, pp, pp))
 
-    print(s.iterate().get_objects())
-    result = Qit().run(s.iterate())
+    ctx = Qit()
+    result = ctx.run(s.iterate())
     assert len(ss) == len(result)
     assert ss == set(map(tuple, result))
 
-    result = Qit().run(s.generate().take(1000))
+    result = ctx.run(s.generate().take(1000))
     for item in result:
         assert tuple(item) in ss
 
@@ -39,6 +39,10 @@ def test_sequence_empty():
     s = Sequence(Range(3), 0)
     assert Qit().run(s.iterate()) == [[]]
     assert Qit().run(s.generate().take(3)) == [[]] * 3
+
+def test_sequence_empty_empty_domain():
+    s = Sequence(Range(10, 10), 2)
+    assert Qit().run(s.iterate()) == []
 
 def test_sequence_variable():
     ctx = Qit()

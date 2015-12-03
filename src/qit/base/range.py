@@ -1,9 +1,10 @@
 
 from qit.base.int import Int
-from qit.base.iterator import IteratorType
+from qit.base.iterator import Iterator
 from qit.base.domain import Domain
 from qit.base.function import Function
 from qit.functions.random import rand_int
+from qit.functions.int import identity
 
 
 class Range(Domain):
@@ -13,22 +14,28 @@ class Range(Domain):
             end = start
             start = 0
 
-        start = Int().check_value(start)
-        end = Int().check_value(end)
-        step = Int().check_value(step)
+        start = Int().value(start)
+        end = Int().value(end)
+        step = Int().value(step)
 
-        iterator = RangeIterator(start, end, step).make()
+        iterator = RangeIterator(start, end, step)
         generator = rand_int(start, end)
 
         if start.is_constant_value(0) and step.is_constant_value(1):
             size = end
+            indexer = identity
         else:
             size = range_size(start, end, step)
+            indexer = Function().returns(Int())
+            indexer.takes(Int(), "_v")
+            indexer.code("return (_v - {{start}}) / {{step}};",
+                         start=start, step=step)
 
         super().__init__(Int(),
                          iterator,
                          generator,
-                         size)
+                         size,
+                         indexer)
 
 
 range_size = Function()
@@ -39,21 +46,11 @@ range_size.returns(Int())
 range_size.code("return (end - start) / step;")
 
 
-class RangeIterator(IteratorType):
+class RangeIterator(Iterator):
 
     def __init__(self, start, end, step):
-        super().__init__(Int())
-        self.start = Int().check_value(start)
-        self.end = Int().check_value(end)
-        self.step = Int().check_value(step)
-
-    @property
-    def childs(self):
-        return super().childs + (self.start, self.end, self.step)
-
-    @property
-    def constructor_args(self):
-        return (self.start, self.end, self.step)
-
-    def build_type(self, builder):
-        return builder.build_range_iterator()
+        itype = Int()
+        super().__init__(itype, Int(), start)
+        self.next_fn.code("return iter + {{step}};", step=step)
+        self.is_valid_fn.code("return iter < {{end}};", end=end)
+        self.value_fn = identity

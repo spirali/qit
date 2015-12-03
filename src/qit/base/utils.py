@@ -19,5 +19,5 @@ def assign_values(variables, args):
         value = args.get(v.name)
         if value is None:
             raise QitException("Unbound variable {}".format(v.name))
-        result[v] = v.type.check_value(args[v.name])
+        result[v] = v.type.value(args[v.name])
     return result

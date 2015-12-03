@@ -43,7 +43,9 @@ class QitObject(HashableEqMixin):
         if not self.is_expression():
             raise QitException("{} is not an expression.".format(self))
         if self.type != type:
-            raise QitException("{} is not an expression of type {}".format(self, type))
+            raise QitException(
+                    "{} is not an expression of type {} but {}"
+                            .format(self, type, self.type))
 
     def declare(self, builder):
         pass

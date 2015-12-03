@@ -1,85 +1,107 @@
-from qit.base.iterator import IteratorType
+from qit.base.iterator import Iterator
 from qit.base.int import Int
+from qit.base.struct import Struct
+from qit.base.atom import Variable
+from qit.base.function import Function
 
 
-class Transformation(IteratorType):
-
-    def __init__(self, iterator, output_type=None):
-        if output_type is None:
-            output_type = iterator.type.output_type
-        super().__init__(output_type)
-        self.parent_iterator = iterator
-
-    @property
-    def childs(self):
-        return super().childs + (self.parent_iterator,)
-
-    @property
-    def constructor_args(self):
-        return (self.parent_iterator,)
+class Transformation(Iterator):
+    pass
 
 
 class TakeTransformation(Transformation):
 
-    def __init__(self, parent_iterator, count):
-        super().__init__(parent_iterator)
-        self.count = Int().check_value(count)
+    def __init__(self, iterator, count):
+        count = Int().value(count)
+        itype = Struct(Int(), iterator.itype)
+        init_expr = itype.value((count, iterator.init_expr))
+        super().__init__(itype, iterator.element_type, init_expr)
 
-    def build_type(self, builder):
-        return builder.build_take_iterator(self)
+        self.next_fn.code("""
+            {{itype}} result(iter);
+            if (result.v0 <= 1) {
+                result.v0 = 0;
+                return result;
+            }
+            result.v0--;
+            result.v1 = {{next_fn}}(result.v1);
+            return result;
+        """, next_fn=iterator.next_fn, itype=itype)
 
-    @property
-    def constructor_args(self):
-        return (self.parent_iterator, self.count)
+        self.is_valid_fn.code("""
+            if (iter.v0 <= 0) {
+                return false;
+            } else {
+                return {{is_valid_fn}}(iter.v1);
+            }
+        """, is_valid_fn=iterator.is_valid_fn)
 
-    @property
-    def childs(self):
-        return super().childs + (self.count,)
+        self.value_fn.code("return {{value_fn}}(iter.v1);",
+                value_fn=iterator.value_fn)
 
 
 class MapTransformation(Transformation):
 
     def __init__(self, iterator, function):
-        super().__init__(iterator, function.return_type)
-        self.function = function
+        super().__init__(iterator.itype,
+                         function.return_type,
+                         iterator.init_expr)
         assert function.return_type is not None
         # TODO: Check compatibility of function and valid return type
-
-    def build_type(self, builder):
-        return builder.build_map_iterator(self)
-
-    @property
-    def constructor_args(self):
-        return (self.parent_iterator, self.function)
-
-    @property
-    def childs(self):
-        return super().childs + (self.function,)
+        self.next_fn = iterator.next_fn
+        self.is_valid_fn = iterator.is_valid_fn
+        x = Variable(iterator.itype, "_x")
+        self.value_fn = function(iterator.value_fn(x)).make_function((x,))
 
 
 class SortTransformation(Transformation):
 
     def __init__(self, iterator, ascending=True):
-        super().__init__(iterator)
-        self.asceding = True
-
-    def build_type(self, builder):
-        return builder.build_sort_iterator(self)
-
+        raise Exception("TODO")
 
 class FilterTransformation(Transformation):
 
     def __init__(self, iterator, function):
-        super().__init__(iterator)
-        self.function = function
+        itype = iterator.itype
+        init_expr = Function().returns(itype).code("""
+            {{itype}} result = {{init_expr}};
+            for(;;) {
+                if (!{{is_valid_fn}}(result)) {
+                    return result; // Iterator is empty
+                }
+                if ({{function}}({{value_fn}}(result))) {
+                    return result; // We have found a value
+                }
+                result = {{next_fn}}(result);
+            }
+            """,
+            init_expr=iterator.init_expr,
+            itype=iterator.itype,
+            next_fn=iterator.next_fn,
+            is_valid_fn=iterator.is_valid_fn,
+            value_fn=iterator.value_fn,
+            function=function)()
+        super().__init__(iterator.itype,
+                         iterator.element_type,
+                         init_expr)
+        self.is_valid_fn = iterator.is_valid_fn
+        self.value_fn = iterator.value_fn
+        self.next_fn.code("""
+            {{itype}} result;
+            result = {{next_fn}}(iter);
+            for(;;) {
+                if (!{{is_valid_fn}}(result)) {
+                    return result; // Iterator is empty
+                }
+                if ({{function}}({{value_fn}}(result))) {
+                    return result; // We have found a value
+                }
+                result = {{next_fn}}(result);
+            }
+            """,
+            itype=iterator.itype,
+            next_fn=iterator.next_fn,
+            is_valid_fn=iterator.is_valid_fn,
+            value_fn=iterator.value_fn,
+            function=function)
 
-    def build_type(self, builder):
-        return builder.build_filter_iterator(self)
-
-    @property
-    def constructor_args(self):
-        return (self.parent_iterator, self.function)
-
-    @property
-    def childs(self):
-        return super().childs + (self.function,)

@@ -3,7 +3,7 @@ init()
 
 from qit import Int, Struct, Vector, Variable
 
-def test_struct_variable():
+def test_vector_constant():
     ctx = Qit()
     s = Struct(Int(), Int())
     v = Vector(s)

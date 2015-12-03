@@ -1,9 +1,9 @@
 
 from qit.base.domain import Domain
-from qit.base.iterator import IteratorType
+from qit.base.iterator import Iterator
+from qit.base.bool import Bool
 from qit.base.struct import Struct
 from qit.base.function import Function
-from qit.base.int import Int
 from qit.functions.int import multiplication_n
 
 class Product(Domain):
@@ -26,23 +26,40 @@ class Product(Domain):
                 type,
                 self._make_iterator(type, domains),
                 self._make_generator(type, domains),
-                self._make_size(domains))
+                self._make_size(domains),
+                self._make_indexer(domains))
         self.domains = tuple(domains)
 
     def _make_iterator(self, type, domains):
         iterators = [ d.iterator for d in domains ]
         if all(iterators):
-            return ProductIterator(type, iterators).make()
+            return ProductIterator(type, iterators)
 
     def _make_generator(self, type, domains):
-        generators = [ d.generator for d in domains ]
+        generators = tuple(d.generator for d in domains)
         if all(generators):
-            return ProductGenerator(type, generators)()
+            generator = Function().returns(type).code("""
+            return {
+            {% for g in _generators %}
+               {{b(g)}}{% if not loop.last %},{% endif %}
+            {% endfor %}
+            };
+            """, _generators=generators).uses(generators)
+            return generator()
 
     def _make_size(self, domains):
         sizes = [ d.size for d in domains ]
         if all(sizes):
             return multiplication_n(len(sizes))(*sizes)
+
+    def _make_indexer(self, domains):
+        indexers = [ d.indexer for d in domains ]
+        if all(indexers):
+            """
+            indexer = FunctionWithExprs(start=start, step=step).returns(Int())
+            indexer.takes(Int(), "_v")
+            indexer.code("return (_v - {start}) / {step};")
+            """
 
     def __mul__(self, other):
         args = list(zip(self.domains, self.type.names))
@@ -50,35 +67,62 @@ class Product(Domain):
         return Product(*args)
 
 
-class ProductIterator(IteratorType):
+class ProductIterator(Iterator):
 
-    def __init__(self, type, iterators):
-        super().__init__(type)
-        assert len(type.names) == len(iterators)
-        self.iterators = tuple(iterators)
+    def __init__(self, struct, iterators):
+        items = [ (Bool(), "_is_valid") ]
+        items += [ (i.itype, name)
+                   for i, name in zip(iterators, struct.names) ]
+        itype = Struct(*items)
+        iters = tuple(zip(struct.names, iterators))
 
-    @property
-    def childs(self):
-        return super().childs + self.iterators
+        objects = set()
+        for i in iterators:
+            objects.update(i.childs)
+        objects = tuple(objects)
 
-    def declare(self, builder):
-        builder.declare_product_iterator(self)
+        init_expr = Function(returns=itype).code("""
+            {{itype}} iter(
+                true
+            {% for name, i in _iters %}
+                ,{{b(i.init_expr)}}
+            {% endfor %}
+            );
+            {% for name, i in _iters %}
+                if (!({{b(i.is_valid_fn)}}(iter.{{name}}))) {
+                    iter._is_valid = false;
+                    return iter;
+                }
+            {% endfor %}
+            return iter;
 
-    @property
-    def constructor_args(self):
-        return self.iterators
+        """, itype=itype, _iters=iters, struct=struct).uses(objects)()
 
+        super().__init__(itype, struct, init_expr)
 
-class ProductGenerator(Function):
+        self.next_fn.code("""
+            {{itype}} result = iter;
+            {% for name, i in _iters %}
+                result.{{name}} = {{ b(i.next_fn) }}(result.{{name}});
+                if ({{ b(i.is_valid_fn) }}(result.{{name}})) {
+                    return result;
+                } else {
+                    result.{{name}} = {{b(i.init_expr)}};
+                }
+            {% endfor %}
+            result._is_valid = false;
+            return result;
+        """, itype=itype, _iters=iters).uses(objects)
 
-    def __init__(self, type, generators):
-        super().__init__()
-        self.returns(type)
-        self.generators = tuple(generators)
+        self.is_valid_fn.code("""
+            return iter._is_valid;
+        """, _iters=iters).uses(objects)
 
-    @property
-    def childs(self):
-        return super().childs + self.generators
-
-    def write_code(self, builder):
-        builder.write_struct_generator(self.return_type, self.generators)
+        self.value_fn.code("""
+            return {
+            {% for name, i in _iters %}
+                {{b(i.value_fn)}}(iter.{{name}})
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+            };
+        """, _iters=iters, struct=struct).uses(objects)

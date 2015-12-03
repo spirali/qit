@@ -7,11 +7,12 @@ class Int(Type):
     struct = struct.Struct('<i')
     struct_size = struct.size
 
-    def build_type(self, builder):
-        return builder.build_int_type()
+    def build(self, builder):
+        return "int"
 
     def build_constant(self, builder, value):
-        return builder.build_int_constant(value)
+        assert isinstance(value, int)
+        return str(value)
 
     def read(self, f):
         data = f.read(self.struct_size)
@@ -21,3 +22,6 @@ class Int(Type):
 
     def is_python_instance(self, obj):
         return isinstance(obj, int)
+
+    def __repr__(self):
+        return "Int()"

@@ -1,7 +1,7 @@
 
-from qit.base.type import NamedType
+from qit.base.type import Type
 
-class Struct(NamedType):
+class Struct(Type):
 
     autoname_prefix = "Struct"
 
@@ -16,7 +16,7 @@ class Struct(NamedType):
                 names.append(arg[1])
             else:
                 types.append(arg)
-                names.append("_v{}".format(len(names)))
+                names.append("v{}".format(len(names)))
 
         assert len(set(names)) == len(names)
         self.names = tuple(names)
@@ -32,14 +32,17 @@ class Struct(NamedType):
         self.name = name
         return self
 
-    def build_type(self, builder):
-        return builder.build_struct_type(self)
-
     def build_constant(self, builder, value):
         return builder.build_struct_constant(self, value)
 
     def is_python_instance(self, obj):
         return isinstance(obj, tuple) and len(obj) == len(self.names)
+
+    def transform_python_instance(self, obj):
+        return tuple(t.value(v) for t, v in zip(self.types, obj))
+
+    def childs_from_value(self, value):
+        return value
 
     def declare(self, builder):
         builder.declare_struct(self)
@@ -63,4 +66,7 @@ class Struct(NamedType):
         args.append(other)
         return Struct(*args)
 
-
+    def __repr__(self):
+        return "Struct({})".format(
+                ", ".join("({}, {})".format(repr(t), repr(name))
+                for t, name in zip(self.types, self.names)))

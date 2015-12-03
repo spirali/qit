@@ -59,6 +59,6 @@ def test_apply_function_constant():
 
 def test_function_constant():
     c = Qit()
-    f = Int().const(7).make_function()
+    f = Int().value(7).make_function()
     result = c.run(f())
     assert result == 7

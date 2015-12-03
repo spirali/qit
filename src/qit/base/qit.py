@@ -35,8 +35,7 @@ class Qit:
                                 level=log_level)
 
     def run(self, obj, args=None):
-        check_qit_object(obj)
-        assert obj.is_expression()
+        obj = obj.get_expression()
         variables = obj.get_variables()
         validate_variables(variables)
         if args is None:
@@ -44,9 +43,9 @@ class Qit:
         return self.env.run_collect(obj,
                                     assign_values(variables, args))
 
-    def declarations(self, obj, exclude_inline=True):
+    def declarations(self, obj):
         check_qit_object(obj)
-        return self.env.declarations(obj, exclude_inline=exclude_inline)
+        return self.env.declarations(obj)
 
     def create_files(self, obj):
         check_qit_object(obj)

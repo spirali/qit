@@ -15,8 +15,9 @@ class Vector(Type):
     def childs(self):
         return super().childs + (self.element_type,)
 
-    def build_type(self, builder):
-        return builder.build_vector_type(self)
+    def build(self, builder):
+        return "std::vector<{} >".format(
+            self.element_type.build(builder))
 
     def read(self, f):
         data = f.read(self.struct_size)

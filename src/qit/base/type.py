@@ -14,7 +14,7 @@ class Type(QitObject):
     def is_type(self):
         return True
 
-    def build_type(self, builder):
+    def build(self, builder):
         return builder.get_autoname(self)
 
     def declare(self, builder):
@@ -26,16 +26,15 @@ class Type(QitObject):
     def transform_python_instance(self, obj):
         return obj
 
-    def check_value(self, value):
+    def value(self, value):
         if self.is_python_instance(value):
             return Constant(self, self.transform_python_instance(value))
         check_qit_object(value)
         value.check_expression_type(self)
         return value
 
-    def const(self, value):
-        assert self.is_python_instance(value)
-        return Constant(self, self.transform_python_instance(value))
+    def childs_from_value(self, value):
+        return ()
 
     def values(self, *args):
         from qit.base.values import Values
@@ -48,12 +47,5 @@ class Type(QitObject):
     def __mul__(self, other):
         return Struct(self, other)
 
-
-class NamedType(Type):
-
-    def declare(self, builder):
-        if self.name:
-            self.basic_type.declare(builder)
-            builder.declare_type_alias(self)
 
 from qit.base.struct import Struct

@@ -18,7 +18,7 @@ class Variable(Atom):
     def is_variable(self):
         return True
 
-    def build_value(self, builder):
+    def build(self, builder):
         return self.name
 
     def get_variables(self):
@@ -36,11 +36,15 @@ class Constant(Atom):
             raise InvalidConstant(type, value)
         self.value = value
 
-    def build_value(self, builder):
+    def build(self, builder):
         return self.type.build_constant(builder, self.value)
 
     def is_constant_value(self, value):
         return self.value == value
+
+    @property
+    def childs(self):
+        return (self.type,) + self.type.childs_from_value(self.value)
 
     def __repr__(self):
         return "Constant({}, {})".format(self.type, repr(self.value))

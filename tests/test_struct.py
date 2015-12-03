@@ -19,3 +19,8 @@ def test_struct_mul():
     s1 = Int() * Int() * Int()
     s2 = Struct(Int(), Int(), Int())
     assert s1 == s2
+
+def test_struct_empty():
+    ctx = Qit()
+    s1 = Struct()
+    ctx.run(s1.value(()))

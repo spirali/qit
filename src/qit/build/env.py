@@ -77,10 +77,10 @@ class CppEnv(object):
             logging.debug("Running: %s", args)
             subprocess.check_call(args)
 
-    def declarations(self, obj, exclude_inline):
+    def declarations(self, obj):
         builder = CppBuilder(self)
         return [builder.get_function_declaration(fn) for fn in obj.get_functions()
-                if not exclude_inline or fn.is_external()]
+                if fn.is_external()]
 
     def get_function_filename(self, function):
         return os.path.abspath(

@@ -7,11 +7,12 @@ class Bool(Type):
     struct = struct.Struct('<?')
     struct_size = struct.size
 
-    def build_type(self, builder):
-        return builder.build_bool_type()
+    def build(self, builder):
+        return "bool"
 
     def build_constant(self, builder, value):
-        return builder.build_bool_constant(value)
+        assert isinstance(value, bool)
+        return "true" if value else "false"
 
     def is_python_instance(self, obj):
         return isinstance(obj, bool)

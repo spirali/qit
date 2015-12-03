@@ -1,20 +1,13 @@
 
-from qit.base.iterator import IteratorType
-from qit.base.utils import sorted_variables
+from qit.base.iterator import Iterator
+from qit.base.struct import Struct
 
-class GeneratorIterator(IteratorType):
+class GeneratorIterator(Iterator):
 
     def __init__(self, generator):
-        super().__init__(generator.type)
         self.generator = generator
-
-    def declare(self, builder):
-        builder.declare_generator_iterator(self)
-
-    @property
-    def constructor_args(self):
-        return tuple(sorted_variables(self.generator.get_variables()))
-
-    @property
-    def childs(self):
-        return super().childs + (self.generator,)
+        itype = Struct()
+        super().__init__(itype, generator.function.return_type, itype.value(()))
+        self.next_fn.code("return {};")
+        self.value_fn.code("return {{generator}};", generator=generator)
+        self.is_valid_fn.code("return true;")

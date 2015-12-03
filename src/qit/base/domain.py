@@ -13,7 +13,7 @@ class Domain(QitObject):
         self.iterator = iterator
         self.generator = generator
         if size is not None:
-            self.size = Int().check_value(size)
+            self.size = Int().value(size)
         else:
             self.size = None
         self.indexer = indexer
@@ -31,7 +31,7 @@ class Domain(QitObject):
         if self.generator is None:
             raise QitException(
                     "Domain '{}' does not have an generator".format(repr(self)))
-        return GeneratorIterator(self.generator).make()
+        return GeneratorIterator(self.generator)
 
     def values(self, *values):
         return self.type.values(*values)

@@ -87,3 +87,15 @@ def test_range_size():
     r = Range(start, end, step)
     assert ctx.run(r.size, args={ "start" : 5, "end" : 10, "step" : 1 }) == 5
     assert ctx.run(r.size, args={ "start" : 5, "end" : 10, "step" : 2 }) == 2
+
+def test_range_indexer():
+    ctx = Qit()
+    r = Range(10)
+    ctx.run(r.indexer(5)) == 5
+
+    start = Variable(Int(), "start")
+    end = Variable(Int(), "end")
+    step = Variable(Int(), "step")
+    r = Range(start, end, step)
+    result = ctx.run(r.iterate().map(r.indexer), args={"start" : 5, "end": 21, "step" : 3})
+    assert result == list(range(6))
