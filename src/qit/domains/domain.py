@@ -1,7 +1,7 @@
 
 from qit.base.qitobject import QitObject, check_qit_object
 from qit.base.exception import QitException
-from qit.base.generator import GeneratorIterator
+from qit.domains.generator import GeneratorIterator
 from qit.base.int import Int
 
 class Domain(QitObject):
@@ -46,4 +46,4 @@ def check_domain(obj, have_iterator=False):
     if not isinstance(obj, Domain):
         raise QitException("{} is not domain".format(obj))
 
-from qit.base.product import Product
+from qit.domains.product import Product

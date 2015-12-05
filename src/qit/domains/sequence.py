@@ -1,7 +1,7 @@
-from qit.base.iterator import Iterator
 from qit.base.int import Int
 from qit.base.vector import Vector
-from qit.base.domain import Domain
+from qit.domains.domain import Domain
+from qit.domains.iterator import Iterator
 from qit.base.function import Function
 from qit.functions.int import power
 

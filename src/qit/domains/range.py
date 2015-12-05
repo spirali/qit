@@ -1,8 +1,8 @@
 
 from qit.base.int import Int
-from qit.base.iterator import Iterator
-from qit.base.domain import Domain
 from qit.base.function import Function
+from qit.domains.iterator import Iterator
+from qit.domains.domain import Domain
 from qit.functions.random import rand_int
 from qit.functions.int import identity
 

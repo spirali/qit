@@ -183,7 +183,7 @@ class CppBuilder(object):
         assert len(value) == len(struct.names)
         args = ",".join(v.build(self)
                         for t, v in zip(struct.types, value))
-        return "{}({})".format(struct.build(struct), args)
+        return "{}({})".format(struct.build(self), args)
 
     # Vector
 

@@ -1,6 +1,6 @@
 
-from qit.base.iterator import Iterator
 from qit.base.struct import Struct
+from qit.domains.iterator import Iterator
 
 class GeneratorIterator(Iterator):
 

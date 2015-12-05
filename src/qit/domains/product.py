@@ -1,8 +1,8 @@
 
-from qit.base.domain import Domain
-from qit.base.iterator import Iterator
 from qit.base.bool import Bool
 from qit.base.struct import Struct
+from qit.domains.domain import Domain
+from qit.domains.iterator import Iterator
 from qit.base.function import Function
 from qit.functions.int import multiplication_n
 

@@ -1,8 +1,9 @@
-from qit.base.iterator import Iterator
+
 from qit.base.int import Int
 from qit.base.struct import Struct
 from qit.base.atom import Variable
 from qit.base.function import Function
+from qit.domains.iterator import Iterator
 
 
 class Transformation(Iterator):

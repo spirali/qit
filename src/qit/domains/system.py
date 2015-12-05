@@ -1,4 +1,4 @@
-from qit.base.iterator import IteratorType
+from qit.domains.iterator import Iterator
 from qit.base.vector import Vector
 from qit.base.int import Int
 from qit.base.qitobject import QitObject
@@ -25,7 +25,7 @@ class System(QitObject):
         return (self.state_type, self.state_iterator) + self.rules
 
     def iterate_states(self, depth):
-        return SystemIterator(self, depth).make()
+        return StateIterator(self, depth)
 
     def get_rule_type(self, rule):
         rule_type = rule.return_type
@@ -36,21 +36,7 @@ class System(QitObject):
         return RuleType.invalid
 
 
-class SystemIterator(IteratorType):
+class StateIterator(Iterator):
 
     def __init__(self, system, depth):
-        super().__init__(system.state_type)
-        self.depth = Int().check_value(depth)
-        self.system = system
-
-    @property
-    def childs(self):
-        return super().childs + (self.depth, self.system)
-
-    @property
-    def constructor_args(self):
-        variables = sorted_variables(self.get_variables())
-        return (self.system.state_iterator, self.depth) + tuple(variables)
-
-    def declare(self, builder):
-        builder.declare_system_iterator(self)
+        pass

@@ -4,8 +4,6 @@ from qit.base.bool import Bool
 from qit.base.vector import Vector
 from qit.base.qitobject import QitObject
 
-class IteratorType:
-    pass # DELETEME
 
 class Iterator(QitObject):
 
@@ -67,13 +65,7 @@ class Iterator(QitObject):
         return self.to_vector()
 
 
-class VectorIterator(Iterator):
-
-    def __init__(self, expression):
-        vector = expression.type
-
-
 # To broke import cycle, we import following packages at the end
-from qit.base.transformation import TakeTransformation, FilterTransformation
-from qit.base.transformation import MapTransformation
-from qit.base.transformation import SortTransformation
+from qit.domains.transformation import TakeTransformation, FilterTransformation
+from qit.domains.transformation import MapTransformation
+from qit.domains.transformation import SortTransformation
