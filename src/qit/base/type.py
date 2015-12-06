@@ -37,7 +37,7 @@ class Type(QitObject):
         return ()
 
     def values(self, *args):
-        from qit.base.values import Values
+        from qit.domains.values import Values
         return Values(self, args)
 
     def prepare_write_function(self):

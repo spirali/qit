@@ -61,7 +61,6 @@ def test_values_int_variable():
     result = ctx.run(r.iterate(), args={"x": 2, "y": 11})
     assert result == [ 2, 7, 11 ]
 
-
 def test_values_product_variable():
     ctx = Qit()
     x = Variable(Int() * Int(), "x")
