@@ -6,7 +6,7 @@ from qit.base.atom import Constant
 class Type(QitObject):
 
     autoname_prefix = "Type"
-
+    pass_by_value = False
 
     def __init__(self):
         pass
@@ -43,6 +43,12 @@ class Type(QitObject):
     def make_domain(self):
         from qit.base.domain import Domain
         return Domain(self)
+
+    def build_param(self, builder, name):
+        if self.pass_by_value:
+            return "{} {}".format(self.build(builder), name)
+        else:
+            return "const {} &{}".format(self.build(builder), name)
 
     def __mul__(self, other):
         return Struct(self, other)

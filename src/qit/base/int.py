@@ -4,6 +4,8 @@ import struct
 
 class Int(Type):
 
+    pass_by_value = True
+
     struct = struct.Struct('<i')
     struct_size = struct.size
 

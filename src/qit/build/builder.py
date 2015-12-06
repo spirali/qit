@@ -139,12 +139,12 @@ class CppBuilder(object):
                              name)
 
         if struct.names:
-            args = ",".join("const {} &{}".format(t.build(self), name)
+            params = ",".join(t.build_param(self, name)
                             for t, name in zip(struct.types, struct.names))
 
             consts = ": " + ",".join("{0}({0})".format(name)
                             for name in struct.names)
-            self.writer.line("{}({}) {} {{}}", struct_type, args, consts)
+            self.writer.line("{}({}) {} {{}}", struct_type, params, consts)
         self.writer.line("{}() {{}}", struct_type)
 
         # Write
@@ -227,7 +227,7 @@ class CppBuilder(object):
                              ",".join("{0}({0})".format(v.name)
                                       for v in variables))
 
-        params = [ "const {} &{}".format(type.build(self), name)
+        params = [ type.build_param(self, name)
                    for type, name in function.params ]
         self.writer.line("{} operator()({})",
                          function.return_type.build(self),
@@ -269,8 +269,7 @@ class CppBuilder(object):
         self.writer.line(call + ");")
 
     def get_function_declaration(self, function):
-        args = ", ".join([ "const {} &{}".format(c.build(self), name)
-                   for c, name in function.params ])
+        args = ", ".join([t.build_param(self, name) for t, name in function.params])
         if function.return_type is not None:
             return_type = function.return_type.build(self)
         else:

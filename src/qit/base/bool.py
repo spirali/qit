@@ -4,6 +4,8 @@ import struct
 
 class Bool(Type):
 
+    pass_by_value = True
+
     struct = struct.Struct('<?')
     struct_size = struct.size
 

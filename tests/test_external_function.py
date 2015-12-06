@@ -54,5 +54,5 @@ def test_qit_declaration():
 
     q = Qit()
 
-    assert q.declarations(g) == ["int g(const int &x)"]
+    assert q.declarations(g) == ["int g(int x)"]
     assert len(q.declarations(p.iterate().map(f).map(g).map(g))) == 2
