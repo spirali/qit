@@ -97,6 +97,9 @@ class CppBuilder(object):
         self.writer.line("#include <stdlib.h>")
         self.writer.line("#include <time.h>")
         self.writer.line("#include <algorithm>")
+        self.writer.line("#include <random>")
+        self.writer.emptyline()
+        self.writer.line("std::default_random_engine QIT_GENERATOR(time(nullptr));")
         self.writer.emptyline()
         self.writer.emptyline()
 
