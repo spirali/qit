@@ -21,8 +21,7 @@ class CppEnv(object):
         self.compiler = "g++"
         self.cpp_flags = ("-O3",
                           "-std=c++11",
-                          "-march=native",
-                          "-I", paths.LIBQIT_DIR)
+                          "-march=native")
 
     def run_collect(self, obj, args):
         self.check_all(obj)

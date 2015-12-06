@@ -1,11 +1,7 @@
 from qit.base.type import Type
-import struct
-
+from qit.base.int import Int
 
 class Vector(Type):
-
-    struct = struct.Struct('<Q')
-    struct_size = struct.size
 
     def __init__(self, element_type):
         super().__init__()
@@ -20,11 +16,22 @@ class Vector(Type):
             self.element_type.build(builder))
 
     def read(self, f):
-        data = f.read(self.struct_size)
-        if not data:
+        size = Int().read(f)
+        if size is None:
             return None
-        size = self.struct.unpack(data)[0]
         return [ self.element_type.read(f) for i in range(size) ]
+
+    @property
+    def write_function(self):
+        f = self.prepare_write_function()
+        f.code("""
+        {{write_int}}(output, value.size());
+        for (auto item : value) {
+            {{write_function}}(output, item);
+        }
+        """, write_int=Int().write_function,
+             write_function=self.element_type.write_function)
+        return f
 
     def build_constant(self, builder, value):
         return builder.build_vector_constant(self, value)
@@ -33,4 +40,4 @@ class Vector(Type):
         return isinstance(obj, tuple) or isinstance(obj, list)
 
     def transform_python_instance(self, obj):
-        return tuple(obj)
+        return tuple(self.element_type.value(v) for v in obj)

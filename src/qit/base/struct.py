@@ -28,10 +28,6 @@ class Struct(Type):
     def childs(self):
         return self.types
 
-    def set_name(self, name):
-        self.name = name
-        return self
-
     def build_constant(self, builder, value):
         return builder.build_struct_constant(self, value)
 
@@ -60,6 +56,18 @@ class Struct(Type):
                     raise Exception("Incomplete struct")
             lst.append(element)
         return tuple(lst)
+
+    @property
+    def write_function(self):
+        functions = tuple(t.write_function for t in self.types)
+        f = self.prepare_write_function()
+        f.code("""
+        {%- for name, f in _names_and_functions %}
+            {{b(f)}}(output, value.{{name}});
+        {%- endfor %}
+        """, _names_and_functions=zip(self.names, functions))
+        f.uses(functions)
+        return f
 
     def __mul__(self, other):
         args = list(zip(self.types, self.names))

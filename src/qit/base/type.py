@@ -40,9 +40,10 @@ class Type(QitObject):
         from qit.base.values import Values
         return Values(self, args)
 
-    def make_domain(self):
-        from qit.base.domain import Domain
-        return Domain(self)
+    def prepare_write_function(self):
+        from qit.base.function import Function
+        from qit.base.file import File
+        return Function().takes(File(), "output").takes(self, "value")
 
     def build_param(self, builder, name):
         if self.pass_by_value:

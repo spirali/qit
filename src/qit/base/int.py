@@ -22,6 +22,12 @@ class Int(Type):
             return None
         return self.struct.unpack(data)[0]
 
+    @property
+    def write_function(self):
+        f = self.prepare_write_function()
+        f.code("fwrite(&value, sizeof(value), 1, output);")
+        return f
+
     def is_python_instance(self, obj):
         return isinstance(obj, int)
 

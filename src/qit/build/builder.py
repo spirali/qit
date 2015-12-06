@@ -28,13 +28,15 @@ class CppBuilder(object):
         self.writer.line("#include \"{}\"", filename)
 
     def build_collect(self, obj, args):
+        write_function = obj.type.write_function
         self.write_header()
         obj.declare_all(self)
+        write_function.declare_all(self)
         self.main_begin()
         self.init_fifo()
         self.init_variables(args)
-        variable = obj.write_into_variable(self)
-        self.writer.line("qit::write(output, {});", variable)
+        self.writer.line(
+             "{}(output, {});", write_function.build(self), obj.build(self))
         self.writer.line("fclose(output);")
         self.main_end()
 
@@ -88,8 +90,6 @@ class CppBuilder(object):
         self.writer.line("       QIT generated file")
         self.writer.line("*/")
         self.writer.emptyline()
-        self.writer.line("#include <qit.h>")
-        self.writer.emptyline()
         self.writer.line("#include <vector>")
         self.writer.line("#include <set>")
         self.writer.line("#include <iostream>")
@@ -97,7 +97,6 @@ class CppBuilder(object):
         self.writer.line("#include <stdlib.h>")
         self.writer.line("#include <time.h>")
         self.writer.line("#include <algorithm>")
-
         self.writer.emptyline()
         self.writer.emptyline()
 
@@ -147,13 +146,6 @@ class CppBuilder(object):
             self.writer.line("{}({}) {} {{}}", struct_type, params, consts)
         self.writer.line("{}() {{}}", struct_type)
 
-        # Write
-        self.writer.line("void write(FILE *f) const")
-        self.writer.block_begin()
-        for name in struct.names:
-            self.writer.line("qit::write(f, {});", name)
-        self.writer.block_end()
-
         # Operator <
         self.writer.line("bool operator <(const {} &other) const", struct_type)
         self.writer.block_begin()
@@ -188,8 +180,7 @@ class CppBuilder(object):
     # Vector
 
     def build_vector_constant(self, sequence, value):
-        t = sequence.element_type
-        args = ",".join(t.build_constant(self, v) for v in value)
+        args = ",".join(v.build(self) for v in value)
         return "{{ {} }}".format(args)
 
     # Function
@@ -230,7 +221,8 @@ class CppBuilder(object):
         params = [ type.build_param(self, name)
                    for type, name in function.params ]
         self.writer.line("{} operator()({})",
-                         function.return_type.build(self),
+                         function.return_type.build(self)
+                             if function.return_type else "void",
                          ",".join(params))
         self.writer.block_begin()
         function.write_code(self)
