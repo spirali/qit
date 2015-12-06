@@ -29,7 +29,7 @@ class Vector(Type):
         f = self.prepare_write_function()
         f.code("""
         {{write_int}}(output, value.size());
-        for (auto item : value) {
+        for (auto const & item : value) {
             {{write_function}}(output, item);
         }
         """, write_int=Int().write_function,
