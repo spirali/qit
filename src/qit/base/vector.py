@@ -21,6 +21,9 @@ class Vector(Type):
             return None
         return [ self.element_type.read(f) for i in range(size) ]
 
+    def childs_from_value(self, value):
+        return value
+
     @property
     def write_function(self):
         f = self.prepare_write_function()
@@ -33,8 +36,9 @@ class Vector(Type):
              write_function=self.element_type.write_function)
         return f
 
-    def build_constant(self, builder, value):
-        return builder.build_vector_constant(self, value)
+    def build_value(self, builder, value):
+        args = ",".join(v.build(builder) for v in value)
+        return "{{ {} }}".format(args)
 
     def is_python_instance(self, obj):
         return isinstance(obj, tuple) or isinstance(obj, list)

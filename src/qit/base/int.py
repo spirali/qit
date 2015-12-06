@@ -12,7 +12,7 @@ class Int(Type):
     def build(self, builder):
         return "int"
 
-    def build_constant(self, builder, value):
+    def build_value(self, builder, value):
         assert isinstance(value, int)
         return str(value)
 

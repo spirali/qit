@@ -21,7 +21,8 @@ class Range(Domain):
         iterator = RangeIterator(start, end, step)
         generator = rand_int(start, end)
 
-        if start.is_constant_value(0) and step.is_constant_value(1):
+        if (start.is_constructor() and start.value == 0 and
+                step.is_constructor() and step.value == 1):
             size = end
             indexer = identity
         else:

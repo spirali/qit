@@ -2,7 +2,7 @@
 from qit.base.qit import Qit
 
 # Basic
-from qit.base.atom import Variable
+from qit.base.variable import Variable
 from qit.base.function import Function
 
 # Types

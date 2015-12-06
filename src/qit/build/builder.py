@@ -171,18 +171,6 @@ class CppBuilder(object):
         self.writer.block_end()
         self.writer.class_end()
 
-    def build_struct_constant(self, struct, value):
-        assert len(value) == len(struct.names)
-        args = ",".join(v.build(self)
-                        for t, v in zip(struct.types, value))
-        return "{}({})".format(struct.build(self), args)
-
-    # Vector
-
-    def build_vector_constant(self, sequence, value):
-        args = ",".join(v.build(self) for v in value)
-        return "{{ {} }}".format(args)
-
     # Function
 
     def build_function_call(self, function_call):

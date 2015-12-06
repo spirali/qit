@@ -117,4 +117,4 @@ class FunctionFromExpression(Function):
     def write_code(self, builder):
         builder.write_function_from_expression(self.expression)
 
-from qit.base.atom import Variable
+from qit.base.variable import Variable

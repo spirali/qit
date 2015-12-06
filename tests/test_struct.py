@@ -24,3 +24,10 @@ def test_struct_empty():
     ctx = Qit()
     s1 = Struct()
     ctx.run(s1.value(()))
+
+def test_struct_constructor():
+    ctx = Qit()
+    x = Variable(Int(), "x")
+    s = Int() * Int() * Int()
+    result = ctx.run(s.value((x, 10, x)), args={"x": 11})
+    assert result == (11, 10, 11)

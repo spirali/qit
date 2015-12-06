@@ -12,7 +12,7 @@ class Bool(Type):
     def build(self, builder):
         return "bool"
 
-    def build_constant(self, builder, value):
+    def build_value(self, builder, value):
         assert isinstance(value, bool)
         return "true" if value else "false"
 

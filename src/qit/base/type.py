@@ -1,6 +1,6 @@
 
 from qit.base.qitobject import QitObject, check_qit_object
-from qit.base.atom import Constant
+from qit.base.constructor import Constructor
 
 
 class Type(QitObject):
@@ -28,7 +28,7 @@ class Type(QitObject):
 
     def value(self, value):
         if self.is_python_instance(value):
-            return Constant(self, self.transform_python_instance(value))
+            return Constructor(self, self.transform_python_instance(value))
         check_qit_object(value)
         value.check_expression_type(self)
         return value

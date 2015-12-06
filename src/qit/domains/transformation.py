@@ -1,7 +1,7 @@
 
 from qit.base.int import Int
 from qit.base.struct import Struct
-from qit.base.atom import Variable
+from qit.base.variable import Variable
 from qit.base.function import Function
 from qit.domains.iterator import Iterator
 

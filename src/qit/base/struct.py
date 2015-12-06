@@ -28,9 +28,6 @@ class Struct(Type):
     def childs(self):
         return self.types
 
-    def build_constant(self, builder, value):
-        return builder.build_struct_constant(self, value)
-
     def is_python_instance(self, obj):
         return isinstance(obj, tuple) and len(obj) == len(self.names)
 
@@ -68,6 +65,12 @@ class Struct(Type):
         """, _names_and_functions=zip(self.names, functions))
         f.uses(functions)
         return f
+
+    def build_value(self, builder, value):
+        assert len(value) == len(self.types)
+        args = ",".join(v.build(builder)
+                        for t, v in zip(self.types, value))
+        return "{}({})".format(self.build(builder), args)
 
     def __mul__(self, other):
         args = list(zip(self.types, self.names))

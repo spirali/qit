@@ -13,7 +13,7 @@ class Expression(QitObject):
     def is_expression(self):
         return True
 
-    def is_constant_value(self, value):
+    def is_constructor(self):
         return False
 
     def write_into_variable(self, builder):

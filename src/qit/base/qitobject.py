@@ -20,9 +20,6 @@ class QitObject(HashableEqMixin):
     def is_expression(self):
         return False
 
-    def is_atom(self):
-        return False
-
     def get_objects(self):
         result = frozenset((self,))
         for child in self.childs:
