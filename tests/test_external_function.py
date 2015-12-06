@@ -13,7 +13,7 @@ from qit.base.exception import MissingFiles
 def test_extern_function():
     q = Qit()
 
-    make_file_in_build_dir("f.hxx", "int f(int x) { return x * 10; }")
+    make_file_in_build_dir("f.hxx", "qint f(qint x) { return x * 10; }")
 
     i = Int()
     f = Function("f").takes(i, "x").returns(i).from_file("f.hxx")
@@ -54,5 +54,5 @@ def test_qit_declaration():
 
     q = Qit()
 
-    assert q.declarations(g) == ["int g(int x)"]
+    assert q.declarations(g) == ["qint g(qint x)"]
     assert len(q.declarations(p.iterate().map(f).map(g).map(g))) == 2
