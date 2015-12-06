@@ -10,7 +10,7 @@ class Int(Type):
     struct_size = struct.size
 
     def build(self, builder):
-        return "int"
+        return "qint"
 
     def build_value(self, builder, value):
         assert isinstance(value, int)
