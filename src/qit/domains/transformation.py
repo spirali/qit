@@ -74,7 +74,7 @@ class SortTransformation(Transformation):
             }
         """, vector=iterator.to_vector())
         self.next_fn.code("iter.v0++;");
-        self.is_valid_fn.code("iter.v0 < iter.v1.size();");
+        self.is_valid_fn.code("return iter.v0 < iter.v1.size();");
         self.value_fn.code("return iter.v1[iter.v0];");
 
 
