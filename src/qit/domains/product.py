@@ -70,10 +70,7 @@ class Product(Domain):
 class ProductIterator(Iterator):
 
     def __init__(self, struct, iterators):
-        items = [ (Bool(), "_is_valid") ]
-        items += [ (i.itype, name)
-                   for i, name in zip(iterators, struct.names) ]
-        itype = Struct(*items)
+        itype = struct
         iters = tuple(zip(struct.names, iterators))
 
         objects = set()
@@ -81,46 +78,40 @@ class ProductIterator(Iterator):
             objects.update(i.childs)
         objects = tuple(objects)
 
-        init_expr = Function(returns=itype).code("""
-            {{itype}} iter(
-                true
-            {% for name, i in _iters %}
-                ,{{b(i.init_expr)}}
-            {% endfor %}
-            );
-            {% for name, i in _iters %}
-                if (!({{b(i.is_valid_fn)}}(iter.{{name}}))) {
-                    iter._is_valid = false;
-                    return iter;
-                }
-            {% endfor %}
-            return iter;
+        super().__init__(itype, struct)
 
-        """, itype=itype, _iters=iters, struct=struct).uses(objects)()
-
-        super().__init__(itype, struct, init_expr)
+        self.reset_fn.code("""
+            {%- for name, i in _iters %}
+                {{b(i.reset_fn)}}(iter.{{name}});
+            {%- endfor %}
+        """, _iters=iters, struct=struct).uses(objects)
 
         self.next_fn.code("""
-            {% for name, i in _iters %}
+            {%- for name, i in _iters[:-1] %}
                 {{ b(i.next_fn) }}(iter.{{name}});
                 if ({{ b(i.is_valid_fn) }}(iter.{{name}})) {
                     return;
                 } else {
-                    iter.{{name}} = {{b(i.init_expr)}};
+                    {{b(i.reset_fn)}}(iter.{{name}});
                 }
-            {% endfor %}
-            iter._is_valid = false;
+            {%- endfor %}
+            {{ b(_iters[-1][1].next_fn) }}(iter.{{_iters[-1][0]}});
         """, _iters=iters).uses(objects)
 
         self.is_valid_fn.code("""
-            return iter._is_valid;
+            {%- for name, i in _iters %}
+                if (!({{b(i.is_valid_fn)}}(iter.{{name}}))) {
+                    return false;
+                }
+            {%- endfor %}
+            return true;
         """, _iters=iters).uses(objects)
 
         self.value_fn.code("""
             return {
-            {% for name, i in _iters %}
+            {%- for name, i in _iters %}
                 {{b(i.value_fn)}}(iter.{{name}})
                 {% if not loop.last %},{% endif %}
-            {% endfor %}
+            {%- endfor %}
             };
         """, _iters=iters, struct=struct).uses(objects)

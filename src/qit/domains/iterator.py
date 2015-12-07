@@ -7,10 +7,10 @@ from qit.base.qitobject import QitObject
 
 class Iterator(QitObject):
 
-    def __init__(self, itype, element_type, init_expr):
+    def __init__(self, itype, element_type):
         self.itype = itype
         self.element_type = element_type
-        self.init_expr = init_expr
+        self.reset_fn = Function().takes(itype, "iter", const=False)
         self.next_fn = Function().takes(itype, "iter", const=False)
         self.is_valid_fn = Function().takes(itype, "iter").returns(Bool())
         self.value_fn = Function().takes(itype, "iter").returns(element_type)
@@ -18,7 +18,7 @@ class Iterator(QitObject):
     @property
     def childs(self):
         return (self.itype,
-                self.init_expr,
+                self.reset_fn,
                 self.next_fn,
                 self.is_valid_fn,
                 self.value_fn)
@@ -43,7 +43,8 @@ class Iterator(QitObject):
         f.code(
             """
                 {{vector}} output;
-                {{itype}} iterator = {{init_expr}};
+                {{itype}} iterator;
+                {{reset_fn}}(iterator);
                 while({{is_valid_fn}}(iterator)) {
                     output.push_back({{value_fn}}(iterator));
                     {{next_fn}}(iterator);
@@ -51,7 +52,7 @@ class Iterator(QitObject):
                 return output;
             """,
             itype=self.itype,
-            init_expr=self.init_expr,
+            reset_fn=self.reset_fn,
             next_fn=self.next_fn,
             is_valid_fn=self.is_valid_fn,
             value_fn=self.value_fn,

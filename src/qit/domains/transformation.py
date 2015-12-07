@@ -15,8 +15,12 @@ class TakeTransformation(Transformation):
     def __init__(self, iterator, count):
         count = Int().value(count)
         itype = Struct(Int(), iterator.itype)
-        init_expr = itype.value((count, iterator.init_expr))
-        super().__init__(itype, iterator.element_type, init_expr)
+        super().__init__(itype, iterator.element_type)
+
+        self.reset_fn.code("""
+            iter.v0 = {{count}};
+            {{reset_fn}}(iter.v1);
+        """, count=count, reset_fn=iterator.reset_fn)
 
         self.next_fn.code("""
             if (iter.v0 <= 1) {
@@ -43,10 +47,10 @@ class MapTransformation(Transformation):
 
     def __init__(self, iterator, function):
         super().__init__(iterator.itype,
-                         function.return_type,
-                         iterator.init_expr)
+                         function.return_type)
         assert function.return_type is not None
         # TODO: Check compatibility of function and valid return type
+        self.reset_fn = iterator.reset_fn
         self.next_fn = iterator.next_fn
         self.is_valid_fn = iterator.is_valid_fn
         x = Variable(iterator.itype, "_x")
@@ -58,31 +62,28 @@ class SortTransformation(Transformation):
     def __init__(self, iterator, ascending=True):
         raise Exception("TODO")
 
+
 class FilterTransformation(Transformation):
 
     def __init__(self, iterator, function):
-        itype = iterator.itype
-        init_expr = Function().returns(itype).code("""
-            {{itype}} result = {{init_expr}};
+        super().__init__(iterator.itype, iterator.element_type)
+        self.reset_fn.code("""
+            {{reset_fn}}(iter);
             for(;;) {
-                if (!{{is_valid_fn}}(result)) {
-                    return result; // Iterator is empty
+                if (!{{is_valid_fn}}(iter)) {
+                    return;
                 }
-                if ({{function}}({{value_fn}}(result))) {
-                    return result; // We have found a value
+                if ({{function}}({{value_fn}}(iter))) {
+                    return; // We have found a value
                 }
-                {{next_fn}}(result);
+                {{next_fn}}(iter);
             }
             """,
-            init_expr=iterator.init_expr,
-            itype=iterator.itype,
+            reset_fn=iterator.reset_fn,
             next_fn=iterator.next_fn,
             is_valid_fn=iterator.is_valid_fn,
             value_fn=iterator.value_fn,
-            function=function)()
-        super().__init__(iterator.itype,
-                         iterator.element_type,
-                         init_expr)
+            function=function)
         self.is_valid_fn = iterator.is_valid_fn
         self.value_fn = iterator.value_fn
         self.next_fn.code("""

@@ -45,11 +45,16 @@ class SequenceIterator(Iterator):
         itype = Vector(iterator.itype)
         element_type = Vector(iterator.element_type)
 
-        init_expr = Function().returns(itype).code("""
-            return {{itype}}({{size}}, {{init_expr}});
-        """, itype=itype, size=size, init_expr=iterator.init_expr)()
+        super().__init__(itype, element_type)
 
-        super().__init__(itype, element_type, init_expr)
+        self.reset_fn.code("""
+            {{type}} item;
+            {{reset_fn}}(item);
+            iter = {{itype}}({{size}}, item);
+        """, itype=itype,
+             size=size,
+             type=iterator.element_type,
+             reset_fn=iterator.reset_fn)
 
         self.next_fn.code("""
             size_t size = iter.size();
@@ -59,12 +64,12 @@ class SequenceIterator(Iterator):
                 if ({{is_valid_fn}}(iter[i])) {
                     return;
                 } else {
-                    iter[i] = {{init_expr}};
+                    {{reset_fn}}(iter[i]);
                 }
             }
             {{next_fn}}(iter[i]);
         """, next_fn=iterator.next_fn,
-        is_valid_fn=iterator.is_valid_fn, init_expr=iterator.init_expr)
+        is_valid_fn=iterator.is_valid_fn, reset_fn=iterator.reset_fn)
 
         self.is_valid_fn.code("""
             if (iter.begin() == iter.end()) {
