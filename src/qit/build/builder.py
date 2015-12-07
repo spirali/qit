@@ -210,8 +210,8 @@ class CppBuilder(object):
                              ",".join("{0}({0})".format(v.name)
                                       for v in variables))
 
-        params = [ type.build_param(self, name)
-                   for type, name in function.params ]
+        params = [ p.type.build_param(self, p.name, p.const)
+                   for p in function.params ]
         self.writer.line("{} operator()({})",
                          function.return_type.build(self)
                              if function.return_type else "void",
@@ -227,7 +227,7 @@ class CppBuilder(object):
 
         self.writer.class_end()
 
-    def write_function_from_expression(self, expression):
+    def write_return_expression(self, expression):
         self.writer.line("return {};", expression.build(self))
 
     def write_function_inline_code(self, inline_code, inline_code_vars):
@@ -248,12 +248,13 @@ class CppBuilder(object):
             call += "return "
 
         call += function.name + "("
-        call += ", ".join([param[1] for param in function.params])  # param names
+        call += ", ".join([param.name for param in function.params])  # param names
 
         self.writer.line(call + ");")
 
     def get_function_declaration(self, function):
-        args = ", ".join([t.build_param(self, name) for t, name in function.params])
+        args = ", ".join(p.type.build_param(self, p.name, p.const)
+                         for p in function.params)
         if function.return_type is not None:
             return_type = function.return_type.build(self)
         else:

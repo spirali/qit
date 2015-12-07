@@ -2,6 +2,16 @@
 from qit.base.qitobject import QitObject
 from qit.base.expression import Expression
 from qit.base.utils import validate_variables, sorted_variables
+from qit.utils.eqmixin import HashableEqMixin
+
+
+class FunctionParameter(HashableEqMixin):
+
+    def __init__(self, type, name, const):
+        self.type = type
+        self.name = name
+        self.const = const
+
 
 class Function(QitObject):
 
@@ -20,10 +30,10 @@ class Function(QitObject):
     def is_function(self):
         return True
 
-    def takes(self, collection, name=None):
+    def takes(self, type, name=None, const=True):
         if name is None:
             name = "p" + str(len(self.params))
-        self.params = self.params + ((collection, name),)
+        self.params += (FunctionParameter(type, name, const),)
         return self
 
     def returns(self, return_type):
@@ -56,7 +66,7 @@ class Function(QitObject):
 
     @property
     def childs(self):
-        childs = tuple(t for t,name in self.params)
+        childs = tuple(p.type for p in self.params)
         childs += tuple(value for name, value in self.inline_code_vars
                         if not name.startswith("_"))
         childs += self.used_expressions
@@ -86,8 +96,8 @@ class FunctionCall(Expression):
         # TODO: Check args count with QitException
         assert len(args) == len(function.params)
         tmp = []
-        for a, (type, name) in zip(args, function.params):
-            tmp.append(type.value(a))
+        for a, p in zip(args, function.params):
+            tmp.append(p.type.value(a))
         self.args = tuple(tmp)
 
     @property
@@ -112,9 +122,9 @@ class FunctionFromExpression(Function):
 
     @property
     def bounded_variables(self):
-        return frozenset(Variable(t, name) for t, name in self.params)
+        return frozenset(Variable(p.type, p.name) for p in self.params)
 
     def write_code(self, builder):
-        builder.write_function_from_expression(self.expression)
+        builder.write_return_expression(self.expression)
 
 from qit.base.variable import Variable

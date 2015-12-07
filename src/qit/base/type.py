@@ -45,11 +45,14 @@ class Type(QitObject):
         from qit.base.file import File
         return Function().takes(File(), "output").takes(self, "value")
 
-    def build_param(self, builder, name):
-        if self.pass_by_value:
-            return "{} {}".format(self.build(builder), name)
+    def build_param(self, builder, name, const=True):
+        if not const:
+            s = "{} &{}"
+        elif self.pass_by_value:
+            s = "{} {}"
         else:
-            return "const {} &{}".format(self.build(builder), name)
+            s = "const {} &{}"
+        return s.format(self.build(builder), name)
 
     def __mul__(self, other):
         return Struct(self, other)
