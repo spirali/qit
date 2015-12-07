@@ -10,6 +10,7 @@ from qit.base.bool import Bool
 from qit.base.int import Int
 from qit.base.struct import Struct
 from qit.base.vector import Vector
+from qit.base.set import Set
 
 # Domains
 from qit.domains.domain import Domain
