@@ -70,8 +70,8 @@ class Product(Domain):
 class ProductIterator(Iterator):
 
     def __init__(self, struct, iterators):
-        itype = struct
         iters = tuple(zip(struct.names, iterators))
+        itype = Struct(*((i.itype, name) for name, i in iters))
 
         objects = set()
         for i in iterators:

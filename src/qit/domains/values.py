@@ -35,9 +35,9 @@ class ValuesIterator(Iterator):
         self.is_valid_fn.code("return iter < {{_size}};", _size=len(values))
         self.value_fn.code("""
             switch(iter) {
-                {%- for i, v in _values %}
-                case {{i}}: return {{b(v)}};
+                {%- for v in _values %}
+                case {{loop.index0}}: return {{b(v)}};
                 {%- endfor %}
                 default: assert(0);
             }
-        """, _values=enumerate(values)).uses(values)
+        """, _values=values).uses(values)

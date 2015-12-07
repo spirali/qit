@@ -7,16 +7,8 @@ import itertools
 
 def test_system_empty():
     s = System((Int() * Int()).values(), ())
-    result = Qit().run(s.iterate_states(10))
+    result = Qit().run(s.states(10).iterate())
     assert result == []
-
-def test_system_inifinite_initeal_states():
-    ctx = Qit()
-    r = Range(10).generate()
-    s = System(r, ())
-    result = ctx.run(s.iterate_states(10).take(30))
-    assert len(result) == 30
-    assert all(0 <= i < 10 for i in result)
 
 def test_system_basic():
     ctx = Qit()
@@ -33,7 +25,7 @@ def test_system_basic():
     # System
     s = System(v, (f, g, h))
 
-    result = ctx.run(s.iterate_states(2).sort())
+    result = ctx.run(s.states(2).iterate().sort())
     expected = [-210, # 21, f, h
                 -100, # 10, f, h
                 -23,  # 21, g, h
@@ -65,21 +57,19 @@ def test_system_in_product():
     v = Int().values(10, 20)
     s = System(v, (f,g))
 
-    #i = Int().iterator = s.iterate_states(2)
-    D = Domain(Int(), iterator=s.iterate_states(2))
+    D = s.states(2)
     P = Product(D, D)
 
-    values = ctx.run(s.iterate_states(2).take(1000))
+    values = ctx.run(D.iterate().take(1000))
     pairs = set(itertools.product(values, values))
     result = ctx.run(P.iterate().take(1000))
+    assert len(result) == 484 # 22 * 22
     assert pairs == set(result)
-    assert len(result) == 484
-
 
 def test_system_rule_variable():
     ctx = Qit()
     x = Variable(Int(), "x")
     f = Function("f").takes(Int(), "a").returns(Int()).reads(x).code("return x;")
     s = System(Int().values(5), (f,))
-    result = ctx.run(s.iterate_states(3), args={"x": 5})
+    result = ctx.run(s.states(3).iterate(), args={"x": 5})
     assert result == [5]
