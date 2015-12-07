@@ -1,4 +1,4 @@
-from qit.utils.eqmixin import HashableEqMixin
+from qit.base.eqmixin import HashableEqMixin
 from qit.base.exception import InvalidType, QitException
 from copy import copy
 

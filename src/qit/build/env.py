@@ -1,7 +1,6 @@
 
 from qit.build.builder import CppBuilder
-from qit.utils.fs import makedir_if_not_exists
-from qit.base import paths
+from qit.base.utils import makedir_if_not_exists
 from qit.base.exception import MissingFiles
 
 import tempfile

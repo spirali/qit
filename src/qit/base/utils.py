@@ -1,4 +1,5 @@
 
+import os
 from qit.base.exception import QitException
 
 def sorted_variables(variables):
@@ -21,3 +22,7 @@ def assign_values(variables, args):
             raise QitException("Unbound variable {}".format(v.name))
         result[v] = v.type.value(args[v.name])
     return result
+
+def makedir_if_not_exists(dirname):
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)

@@ -2,7 +2,7 @@
 from qit.base.qitobject import QitObject
 from qit.base.expression import Expression
 from qit.base.utils import validate_variables, sorted_variables
-from qit.utils.eqmixin import HashableEqMixin
+from qit.base.eqmixin import HashableEqMixin
 
 
 class FunctionParameter(HashableEqMixin):
