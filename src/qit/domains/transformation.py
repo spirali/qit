@@ -1,8 +1,8 @@
 
 from qit.base.int import Int
+from qit.base.vector import Vector
 from qit.base.struct import Struct
 from qit.base.variable import Variable
-from qit.base.function import Function
 from qit.domains.iterator import Iterator
 
 
@@ -60,7 +60,22 @@ class MapTransformation(Transformation):
 class SortTransformation(Transformation):
 
     def __init__(self, iterator, ascending=True):
-        raise Exception("TODO")
+        itype = Int() * Vector(iterator.element_type)
+        super().__init__(itype, iterator.element_type)
+
+        # Since iter.v1 is never changed, we use it to detect
+        # if reset_fn is called for the first time,
+        # or if reset is used to restart existing iterator
+        self.reset_fn.code("""
+            iter.v0 = 0;
+            if (iter.v1.size() == 0) {
+                iter.v1 = {{vector}};
+                std::sort(iter.v1.begin(), iter.v1.end());
+            }
+        """, vector=iterator.to_vector())
+        self.next_fn.code("iter.v0++;");
+        self.is_valid_fn.code("iter.v0 < iter.v1.size();");
+        self.value_fn.code("return iter.v1[iter.v0];");
 
 
 class FilterTransformation(Transformation):
