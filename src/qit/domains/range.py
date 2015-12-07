@@ -52,6 +52,6 @@ class RangeIterator(Iterator):
     def __init__(self, start, end, step):
         itype = Int()
         super().__init__(itype, Int(), start)
-        self.next_fn.code("return iter + {{step}};", step=step)
+        self.next_fn.code("iter+={{step}};", step=step)
         self.is_valid_fn.code("return iter < {{end}};", end=end)
         self.value_fn = identity

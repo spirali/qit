@@ -101,18 +101,16 @@ class ProductIterator(Iterator):
         super().__init__(itype, struct, init_expr)
 
         self.next_fn.code("""
-            {{itype}} result = iter;
             {% for name, i in _iters %}
-                result.{{name}} = {{ b(i.next_fn) }}(result.{{name}});
-                if ({{ b(i.is_valid_fn) }}(result.{{name}})) {
-                    return result;
+                {{ b(i.next_fn) }}(iter.{{name}});
+                if ({{ b(i.is_valid_fn) }}(iter.{{name}})) {
+                    return;
                 } else {
-                    result.{{name}} = {{b(i.init_expr)}};
+                    iter.{{name}} = {{b(i.init_expr)}};
                 }
             {% endfor %}
-            result._is_valid = false;
-            return result;
-        """, itype=itype, _iters=iters).uses(objects)
+            iter._is_valid = false;
+        """, _iters=iters).uses(objects)
 
         self.is_valid_fn.code("""
             return iter._is_valid;

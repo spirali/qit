@@ -11,7 +11,7 @@ class Iterator(QitObject):
         self.itype = itype
         self.element_type = element_type
         self.init_expr = init_expr
-        self.next_fn = Function().takes(itype, "iter").returns(itype)
+        self.next_fn = Function().takes(itype, "iter", const=False)
         self.is_valid_fn = Function().takes(itype, "iter").returns(Bool())
         self.value_fn = Function().takes(itype, "iter").returns(element_type)
 
@@ -46,7 +46,7 @@ class Iterator(QitObject):
                 {{itype}} iterator = {{init_expr}};
                 while({{is_valid_fn}}(iterator)) {
                     output.push_back({{value_fn}}(iterator));
-                    iterator = {{next_fn}}(iterator);
+                    {{next_fn}}(iterator);
                 };
                 return output;
             """,

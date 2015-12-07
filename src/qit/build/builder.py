@@ -185,8 +185,11 @@ class CppBuilder(object):
     def build_functor(self, function):
         function_name = self.get_autoname(function)
         variables = sorted_variables(function.get_variables())
-        v = ",".join(v.build(self) for v in variables)
-        return "{}({})".format(function_name, v)
+        if variables:
+            v = ",".join(v.build(self) for v in variables)
+            return "({}({}))".format(function_name, v)
+        else:
+            return "{}()".format(function_name)
 
     def declare_function(self, function):
         if self.check_declaration_key(function):

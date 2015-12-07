@@ -8,6 +8,6 @@ class GeneratorIterator(Iterator):
         self.generator = generator
         itype = Struct()
         super().__init__(itype, generator.function.return_type, itype.value(()))
-        self.next_fn.code("return {};")
+        self.next_fn.code("")
         self.value_fn.code("return {{generator}};", generator=generator)
         self.is_valid_fn.code("return true;")

@@ -19,14 +19,12 @@ class TakeTransformation(Transformation):
         super().__init__(itype, iterator.element_type, init_expr)
 
         self.next_fn.code("""
-            {{itype}} result(iter);
-            if (result.v0 <= 1) {
-                result.v0 = 0;
-                return result;
+            if (iter.v0 <= 1) {
+                iter.v0 = 0;
+                return;
             }
-            result.v0--;
-            result.v1 = {{next_fn}}(result.v1);
-            return result;
+            iter.v0--;
+            {{next_fn}}(iter.v1);
         """, next_fn=iterator.next_fn, itype=itype)
 
         self.is_valid_fn.code("""
@@ -73,7 +71,7 @@ class FilterTransformation(Transformation):
                 if ({{function}}({{value_fn}}(result))) {
                     return result; // We have found a value
                 }
-                result = {{next_fn}}(result);
+                {{next_fn}}(result);
             }
             """,
             init_expr=iterator.init_expr,
@@ -88,19 +86,17 @@ class FilterTransformation(Transformation):
         self.is_valid_fn = iterator.is_valid_fn
         self.value_fn = iterator.value_fn
         self.next_fn.code("""
-            {{itype}} result;
-            result = {{next_fn}}(iter);
+            {{next_fn}}(iter);
             for(;;) {
-                if (!{{is_valid_fn}}(result)) {
-                    return result; // Iterator is empty
+                if (!{{is_valid_fn}}(iter)) {
+                    return; // Iterator is empty
                 }
-                if ({{function}}({{value_fn}}(result))) {
-                    return result; // We have found a value
+                if ({{function}}({{value_fn}}(iter))) {
+                    return; // We have found a value
                 }
-                result = {{next_fn}}(result);
+                {{next_fn}}(iter);
             }
             """,
-            itype=iterator.itype,
             next_fn=iterator.next_fn,
             is_valid_fn=iterator.is_valid_fn,
             value_fn=iterator.value_fn,

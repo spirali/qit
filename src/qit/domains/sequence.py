@@ -52,20 +52,18 @@ class SequenceIterator(Iterator):
         super().__init__(itype, element_type, init_expr)
 
         self.next_fn.code("""
-            {{itype}} result = iter;
-            size_t size = result.size();
+            size_t size = iter.size();
             size_t i;
             for(i = 0; i < size - 1; i++) {
-                result[i] = {{next_fn}}(result[i]);
-                if ({{is_valid_fn}}(result[i])) {
-                    return result;
+                {{next_fn}}(iter[i]);
+                if ({{is_valid_fn}}(iter[i])) {
+                    return;
                 } else {
-                    result[i] = {{init_expr}};
+                    iter[i] = {{init_expr}};
                 }
             }
-            result[i] = {{next_fn}}(result[i]);
-            return result;
-        """, itype=itype, next_fn=iterator.next_fn,
+            {{next_fn}}(iter[i]);
+        """, next_fn=iterator.next_fn,
         is_valid_fn=iterator.is_valid_fn, init_expr=iterator.init_expr)
 
         self.is_valid_fn.code("""
