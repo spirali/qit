@@ -19,6 +19,7 @@ from qit.domains.range import Range
 from qit.domains.product import Product
 from qit.domains.sequence import Sequence
 from qit.domains.values import Values
+from qit.domains.enumerate import Enumerate
 
 # Others
 from qit.domains.system import System

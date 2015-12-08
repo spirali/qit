@@ -35,7 +35,7 @@ class Enum(Type):
         return isinstance(obj, str)
 
     def declare(self, builder):
-        if not builder.check_declaration_key(self):
+        if builder.check_declaration_key(self):
             return
         builder.writer.line("enum {} : int {{ {} }};",
                             self.build(builder),
