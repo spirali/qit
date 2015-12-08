@@ -3,6 +3,10 @@ init()
 
 from qit import Int, Function, Variable
 
+def test_int_value():
+    ctx = Qit()
+    ctx.run(Int().value(-300)) == -300
+
 def test_int_variable():
     ctx = Qit()
     x = Variable(Int(), "x")

@@ -23,6 +23,13 @@ def assign_values(variables, args):
         result[v] = v.type.value(args[v.name])
     return result
 
+def is_valid_name(value):
+    if not isinstance(value, str) or len(value) == 0:
+        return False
+    if not value[0].isalpha() and value[0] != "_":
+        return False
+    return all(c.isalnum() or value == "_" for c in value)
+
 def makedir_if_not_exists(dirname):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
