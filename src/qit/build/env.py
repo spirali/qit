@@ -17,7 +17,7 @@ class CppEnv(object):
     def __init__(self, qit):
         self.qit = qit
         self.build_dir = os.path.abspath(qit.build_dir)
-        self.compiler = "g++"
+        self.compiler = "/usr/bin/g++"
         self.cpp_flags = ("-O3",
                           "-std=c++11",
                           "-march=native")
