@@ -1,4 +1,5 @@
 from qit.base.int import Int
+from qit.base.bool import Bool
 from qit.base.vector import Vector
 from qit.domains.domain import Domain
 from qit.domains.iterator import Iterator
@@ -42,48 +43,50 @@ class SequenceIterator(Iterator):
 
     def __init__(self, iterator, size):
         size = Int().value(size)
-        itype = Vector(iterator.itype)
+        itype = Bool() * Vector(iterator.itype)
         element_type = Vector(iterator.element_type)
 
         super().__init__(itype, element_type)
 
         self.reset_fn.code("""
-            {{type}} item;
+            {{inner_itype}} item;
             {{reset_fn}}(item);
-            iter = {{itype}}({{size}}, item);
-        """, itype=itype,
+            iter.v1 = {{ivector}}({{size}}, item);
+            iter.v0 = std::all_of(iter.v1.begin(), iter.v1.end(), {{is_valid_fn}});
+        """, ivector=itype.types[1],
              size=size,
-             type=iterator.element_type,
+             inner_itype=iterator.itype,
+             is_valid_fn=iterator.is_valid_fn,
              reset_fn=iterator.reset_fn)
 
         self.next_fn.code("""
-            size_t size = iter.size();
+            size_t size = iter.v1.size();
+            if (size == 0) {
+                iter.v0 = false;
+                return;
+            }
             size_t i;
             for(i = 0; i < size - 1; i++) {
-                {{next_fn}}(iter[i]);
-                if ({{is_valid_fn}}(iter[i])) {
+                {{next_fn}}(iter.v1[i]);
+                if ({{is_valid_fn}}(iter.v1[i])) {
                     return;
                 } else {
-                    {{reset_fn}}(iter[i]);
+                    {{reset_fn}}(iter.v1[i]);
                 }
             }
-            {{next_fn}}(iter[i]);
+            {{next_fn}}(iter.v1[i]);
+            iter.v0 = {{is_valid_fn}}(iter.v1[i]);
         """, next_fn=iterator.next_fn,
         is_valid_fn=iterator.is_valid_fn, reset_fn=iterator.reset_fn)
 
-        self.is_valid_fn.code("""
-            if (iter.begin() == iter.end()) {
-                return false;
-            }
-            return std::all_of(iter.begin(), iter.end(), {{is_valid_fn}});
-        """, is_valid_fn=iterator.is_valid_fn)
+        self.is_valid_fn.code("return iter.v0;")
 
         self.value_fn.code("""
             {{type}} result;
-            size_t size = iter.size();
+            size_t size = iter.v1.size();
             result.reserve(size);
             for(size_t i = 0; i < size; i++) {
-                result.push_back({{value_fn}}(iter[i]));
+                result.push_back({{value_fn}}(iter.v1[i]));
             }
             return result;
         """, type=element_type, value_fn=iterator.value_fn)
