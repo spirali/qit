@@ -12,12 +12,16 @@ def test_map_value():
     s = Struct(Int(), Int())
     assert ctx.run(Map(s, s).value(m)) == m
 
-def test_map_variable_int():
+def test_map_variable():
     ctx = Qit()
     m = Variable(Map(Int(), Int()), "m")
     assert ctx.run(m, args={"m": { 2: 1, 1: 2 }}) == { 2: 1, 1: 2 }
 
-def test_map_function_reverse_int_map():
+    m = Map(Int(), Int() * Int())
+    x = Variable(Int(), "x")
+    assert ctx.run(m.value({1: (x, 20)}), args={"x": 123}) == {1: (123, 20)}
+
+def test_map_function():
     ctx = Qit()
     t = Map(Int(), Int())
     f = Function().takes(t, "input").returns(t).code("""
@@ -35,14 +39,9 @@ def test_map_empty():
     ctx.run(Map(Int(), Int()).value( {} ))
 
 def test_map_in_map():
-    from qit.base.map import qdict # TODO: how to solve it without using qdict
     def prepare_map (start, size):
-        return qdict((start + i, start * i) for i in range(size))
-        # NOTICE: want to it as (use standard dict):
-        # return dict((start + i, start * i) for i in range(size))
+        return dict((start + i, start * i) for i in range(size))
 
     ctx = Qit()
     d = dict((i, prepare_map(i, 10)) for i in range(3))
     assert ctx.run(Map(Int(), Map(Int(), Int())).value(d)) == d
-
-
