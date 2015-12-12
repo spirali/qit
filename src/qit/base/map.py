@@ -20,6 +20,13 @@ class Map(Type):
         self.domain_type = domain_type
         self.image_type = image_type
 
+    @property
+    def childs(self):
+        return (self.domain_type, self.image_type)
+
+    def childs_from_value(self, value):
+        return tuple(value.keys()) + tuple(value.values())
+
     def build(self, builder):
         return "std::map<{}, {} >".format(self.domain_type.build(builder),
                                           self.image_type.build(builder))
@@ -52,16 +59,14 @@ class Map(Type):
     def is_python_instance(self, obj):
         return isinstance(obj, dict)
 
-    def value(self, value):
-        return super().value(qdict(value))
+    def transform_python_instance(self, obj):
+        return qdict((self.domain_type.value(k), self.image_type.value(v))
+                     for k, v in obj.items())
 
     def build_value(self, builder, value):
-        dom_type = self.domain_type
-        img_type = self.image_type
         arg = ",".join("{{ {0}, {1} }}".format(
-            dom_type.value(k).build(builder), img_type.value(v).build(builder))
-                for k, v in value.items())
-
+            value.build(builder), image.build(builder))
+                for value, image in value.items())
         return "{0} ({{ {1} }})".format(self.build(builder), arg)
 
     def __repr__(self):
