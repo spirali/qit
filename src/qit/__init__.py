@@ -12,6 +12,7 @@ from qit.base.int import Int
 from qit.base.set import Set
 from qit.base.struct import Struct
 from qit.base.vector import Vector
+from qit.base.map import Map
 
 # Domains
 from qit.domains.domain import Domain
