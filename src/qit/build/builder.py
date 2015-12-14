@@ -92,6 +92,7 @@ class CppBuilder(object):
         self.writer.emptyline()
         self.writer.line("#include <vector>")
         self.writer.line("#include <set>")
+        self.writer.line("#include <map>")
         self.writer.line("#include <iostream>")
         self.writer.line("#include <assert.h>")
         self.writer.line("#include <stdlib.h>")
