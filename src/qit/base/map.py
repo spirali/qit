@@ -1,14 +1,8 @@
 
+from qit.base.int import Int
 from qit.base.type import Type
-import struct
-
 
 class Map(Type):
-
-    pass_by_value = False
-
-    struct = struct.Struct('<Q')
-    struct_size = struct.size
 
     def __init__(self, domain_type, image_type):
         self.name = None
@@ -28,28 +22,22 @@ class Map(Type):
                                           self.image_type.build(builder))
 
     def read(self, f):
-        data = f.read(self.struct_size)
-        if not data:
-            return None
-        size = self.struct.unpack(data)[0]
+        size = Int().read(f)
         return dict((self.domain_type.read(f), self.image_type.read(f))
                  for i in range(size))
 
     @property
     def write_function(self):
-        functions = (self.domain_type.write_function,
-                     self.image_type.write_function)
-
         f = self.prepare_write_function();
         f.code("""
-        size_t size = value.size();
-        fwrite(&size, sizeof(size_t), 1, output);
+        {{write_int}}(output, value.size());
         for (auto it = value.cbegin(); it != value.cend(); ++it) {
-            {{ b(_functions[0]) }}(output, it->first);
-            {{ b(_functions[1]) }}(output, it->second);
+            {{ key_write }}(output, it->first);
+            {{ value_write }}(output, it->second);
         }
-        """, _functions=functions)
-        f.uses(functions)
+        """, key_write=self.domain_type.write_function,
+             value_write=self.image_type.write_function,
+             write_int=Int().write_function)
         return f
 
     def is_python_instance(self, obj):
