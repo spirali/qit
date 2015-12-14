@@ -2,10 +2,6 @@
 from qit.base.type import Type
 import struct
 
-class qdict(dict): # NOTICE: standard dictionary is not hasbale?
-
-    def __hash__(self):
-        return hash(frozenset(self.items()))
 
 class Map(Type):
 
@@ -25,7 +21,7 @@ class Map(Type):
         return (self.domain_type, self.image_type)
 
     def childs_from_value(self, value):
-        return tuple(value.keys()) + tuple(value.values())
+        return tuple(v[0] for v in value) + tuple(v[1] for v in value)
 
     def build(self, builder):
         return "std::map<{}, {} >".format(self.domain_type.build(builder),
@@ -60,13 +56,13 @@ class Map(Type):
         return isinstance(obj, dict)
 
     def transform_python_instance(self, obj):
-        return qdict((self.domain_type.value(k), self.image_type.value(v))
+        return frozenset((self.domain_type.value(k), self.image_type.value(v))
                      for k, v in obj.items())
 
     def build_value(self, builder, value):
         arg = ",".join("{{ {0}, {1} }}".format(
             value.build(builder), image.build(builder))
-                for value, image in value.items())
+                for value, image in value)
         return "{0} ({{ {1} }})".format(self.build(builder), arg)
 
     def __repr__(self):
