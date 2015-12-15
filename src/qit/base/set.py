@@ -16,6 +16,10 @@ class Set(Type):
         return "std::set<{} >".format(
             self.element_type.build(builder))
 
+    def build_destructor(self, builder):
+        return "~set<{} >".format(
+            self.element_type.build(builder))
+
     def read(self, f):
         size = Int().read(f)
         if size is None:

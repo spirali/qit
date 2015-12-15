@@ -21,6 +21,10 @@ class Map(Type):
         return "std::map<{}, {} >".format(self.key_type.build(builder),
                                           self.value_type.build(builder))
 
+    def build_destructor(self, builder):
+        return "~map<{}, {} >".format(self.key_type.build(builder),
+                                      self.value_type.build(builder))
+
     def read(self, f):
         size = Int().read(f)
         return dict((self.key_type.read(f), self.value_type.read(f))

@@ -25,6 +25,15 @@ class Enum(Type):
             return None
         return self.names[self.struct.unpack(data)[0]]
 
+    def read_index(self, f):
+        data = f.read(self.struct_size)
+        if not data:
+            return None
+        return self.struct.unpack(data)[0]
+
+    def first(self):
+        return self.value(self.names[0])
+
     @property
     def write_function(self):
         f = self.prepare_write_function()

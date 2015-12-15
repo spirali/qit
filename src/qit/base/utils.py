@@ -33,3 +33,10 @@ def is_valid_name(value):
 def makedir_if_not_exists(dirname):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
+
+def stable_unique(values):
+    result = []
+    for v in values:
+        if v not in result:
+            result.append(v)
+    return result

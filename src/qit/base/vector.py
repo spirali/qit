@@ -15,6 +15,9 @@ class Vector(Type):
         return "std::vector<{} >".format(
             self.element_type.build(builder))
 
+    def build_destructor(self, builder):
+        return "~vector<{} >".format(self.element_type.build(builder))
+
     def read(self, f):
         size = Int().read(f)
         if size is None:
@@ -38,7 +41,7 @@ class Vector(Type):
 
     def build_value(self, builder, value):
         args = ",".join(v.build(builder) for v in value)
-        return "{{ {} }}".format(args)
+        return "{}({{ {} }})".format(self.build(builder), args)
 
     def is_python_instance(self, obj):
         return isinstance(obj, tuple) or isinstance(obj, list)

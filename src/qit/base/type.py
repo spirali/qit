@@ -17,6 +17,9 @@ class Type(QitObject):
     def build(self, builder):
         return builder.get_autoname(self)
 
+    def build_destructor(self, builder):
+        return "~" + self.build(builder)
+
     def declare(self, builder):
         pass
 
