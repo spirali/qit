@@ -21,8 +21,6 @@ class Struct(Type):
         assert len(set(names)) == len(names)
         self.names = tuple(names)
         self.types = tuple(types)
-        self.generators = (None,) * len(names)
-        self.iterators = (None,) * len(names)
 
     @property
     def childs(self):
