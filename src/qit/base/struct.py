@@ -1,6 +1,7 @@
 
 from qit.base.type import Type
 
+
 class Struct(Type):
 
     autoname_prefix = "Struct"

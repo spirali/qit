@@ -45,6 +45,10 @@ class Type(QitObject):
         from qit.base.file import File
         return Function().takes(File(), "output").takes(self, "value")
 
+    def method(self, name, const=True):
+        from qit.base.function import Function
+        return Function(name).takes(self, "self", const)
+
     def build_param(self, builder, name, const=True):
         if not const:
             s = "{} &{}"

@@ -183,11 +183,11 @@ class CppBuilder(object):
         args = ",".join(e.build(self) for e in function_call.args)
         return "{}({})".format(functor, args)
 
-    def build_functor(self, function):
+    def build_functor(self, function, prefix=""):
         function_name = self.get_autoname(function)
         variables = sorted_variables(function.get_variables())
         if variables:
-            v = ",".join(v.build(self) for v in variables)
+            v = ",".join(prefix + v.build(self) for v in variables)
             return "({}({}))".format(function_name, v)
         else:
             return "{}()".format(function_name)
@@ -213,13 +213,7 @@ class CppBuilder(object):
                                       for v in variables),
                              ",".join("{0}({0})".format(v.name)
                                       for v in variables))
-
-        params = [ p.type.build_param(self, p.name, p.const)
-                   for p in function.params ]
-        self.writer.line("{} operator()({})",
-                         function.return_type.build(self)
-                             if function.return_type else "void",
-                         ",".join(params))
+        self.writer.line("{}", function.build_declaration(self, "operator()"))
         self.writer.block_begin()
         function.write_code(self)
         self.writer.block_end()
@@ -234,7 +228,9 @@ class CppBuilder(object):
     def write_return_expression(self, expression):
         self.writer.line("return {};", expression.build(self))
 
-    def write_function_inline_code(self, inline_code, inline_code_vars):
+    def write_code(self, inline_code, inline_code_vars):
+        if isinstance(inline_code_vars, dict):
+            inline_code_vars = tuple(inline_code_vars.items())
         d = {}
         for name, obj in inline_code_vars:
             if name.startswith("_"):
@@ -243,6 +239,7 @@ class CppBuilder(object):
                 d[name] = obj.build(self)
         template = jinja2.Template(inline_code)
         template.globals.update(b=lambda obj: obj.build(self))
+        template.globals["_builder"] = self
         self.writer.text(template.render(d))
 
     def write_function_external_call(self, function):

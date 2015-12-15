@@ -75,12 +75,26 @@ class Function(QitObject):
     def build(self, builder):
         return builder.build_functor(self)
 
+    def build_closure(self, builder, prefix):
+        return builder.build_functor(self, prefix)
+
+    def build_declaration(self, builder, name, skip_first=False):
+        params = [ p.type.build_param(builder, p.name, p.const)
+                   for p in self.params ]
+        if skip_first:
+            params = params[1:]
+        return "{} {}({})".format(
+                         self.return_type.build(builder)
+                             if self.return_type else "void",
+                         name,
+                         ",".join(params))
+
     def write_code(self, builder):
         if self.is_external():
            builder.write_function_external_call(self)
         else:
            assert self.inline_code is not None
-           builder.write_function_inline_code(
+           builder.write_code(
                    self.inline_code, self.inline_code_vars)
 
     def __call__(self, *args):
