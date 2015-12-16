@@ -1,4 +1,5 @@
 from qit.base.map import Map
+from qit.base.function import Function
 from qit.domains.domain import Domain
 from qit.domains.iterator import Iterator
 
@@ -7,8 +8,33 @@ class Mapping(Domain):
 
     def __init__(self, key_domain, value_domain):
         map_type = Map(key_domain.type, value_domain.type)
-        iterator = MappingIterator(key_domain, value_domain)
-        super().__init__(map_type, iterator)
+
+        if key_domain.is_iterable() and value_domain.is_iterable():
+            iterator = MappingIterator(key_domain, value_domain)
+        else:
+            iterator = None
+
+        if key_domain.is_iterable() and value_domain.is_generable():
+            generator = Function().returns(map_type).code("""
+                {{type}} result;
+                {{key_itype}} key_iterator;
+                {{key_reset}}(key_iterator);
+                while ({{key_is_valid}}(key_iterator)) {
+                    result[{{key_value}}(key_iterator)] = {{generator}};
+                    {{key_next}}(key_iterator);
+                }
+                return result;
+            """, type=map_type,
+                 key_itype=key_domain.iterator.itype,
+                 key_reset=key_domain.iterator.reset_fn,
+                 key_is_valid=key_domain.iterator.is_valid_fn,
+                 key_next=key_domain.iterator.next_fn,
+                 key_value=key_domain.iterator.value_fn,
+                 generator=value_domain.generator)()
+        else:
+            generator = None
+
+        super().__init__(map_type, iterator, generator)
 
 
 class MappingIterator(Iterator):
@@ -20,7 +46,6 @@ class MappingIterator(Iterator):
         element_type = Map(key_domain.type,
                            value_domain.type)
         super().__init__(itype, element_type)
-
 
         env = {
             "key_itype" : key_iterator.itype,

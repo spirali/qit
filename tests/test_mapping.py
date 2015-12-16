@@ -48,3 +48,12 @@ def test_mapping_product_sequence():
             return (tuple(key), tuple(value))
 
     assert set(map(to_tuple, result)) == set(map(to_tuple, expected))
+
+def test_mapping_generator():
+    ctx = Qit()
+    m = Mapping(Range(5, 7), Range(2, 8))
+    result = ctx.run(m.generate().take(100))
+    assert len(result) == 100
+    for r in result:
+        assert set(r.keys()) == set((5, 6))
+        assert set(r.values()).issubset(set((2, 3, 4, 5, 6, 7)))

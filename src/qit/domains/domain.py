@@ -33,6 +33,9 @@ class Domain(QitObject):
                     "Domain '{}' does not have an generator".format(repr(self)))
         return GeneratorIterator(self.generator)
 
+    def is_generable(self):
+        return self.generator is not None
+
     def values(self, *values):
         return self.type.values(*values)
 
