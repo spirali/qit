@@ -1,6 +1,7 @@
 
 from qit.base.type import Type
 from qit.base.enum import Enum
+from qit.base.int import Int
 from qit.base.utils import stable_unique
 
 
@@ -8,32 +9,40 @@ class Union(Type):
 
     autoname_prefix = "Union"
 
-    def __init__(self, *args):
-        assert len(args) > 0
-        tags = []
-        types = []
-
-        for arg in args:
-            if isinstance(arg, tuple) and len(arg) == 2:
-                tags.append(arg[0])
-                types.append(arg[1])
-            else:
-                tags.append(arg)
-                types.append(None)
-
-        self.tag_type = Enum(*tags)
+    def __init__(self, types=None, **kw):
+        if types is not None:
+            self.tag_type = Int()
+        else:
+            tags = []
+            types = []
+            for k in sorted(kw.keys()):
+                tags.append(k)
+                types.append(kw[k])
+            self.tag_type = Enum(*tags)
         self.types = tuple(types)
+        assert self.types
 
     @property
     def childs(self):
         return tuple(t for t in self.types if t) + (self.tag_type,)
+
+    @property
+    def has_names(self):
+        return isinstance(self.tag_type, Enum)
+
+    @property
+    def tags(self):
+        if self.has_names:
+            return self.tag_type.names
+        else:
+            return range(len(self.types))
 
     def is_python_instance(self, obj):
         return isinstance(obj, tuple) and len(obj) == 2
 
     def transform_python_instance(self, obj):
         tag, data = obj
-        index = self.tag_type.names.index(tag)
+        index = self.tags.index(tag)
         t = self.types[index]
         if t is None:
             return (self.tag_type.value(tag), None)
@@ -50,7 +59,7 @@ class Union(Type):
             return
         utypes = stable_unique(self.types)
 
-        types = list(zip(self.tag_type.names,
+        types = list(zip(self.tags,
                      ((t, utypes.index(t) if t else None)
                           for t in self.types)))
 
@@ -164,14 +173,18 @@ class Union(Type):
               "_types" : types,
               "_utypes" : utypes,
               "self_type" : self,
-              "init" : self.tag_type.first() })
+              "init" : self.tag_type.first() if self.has_names else self.tag_type.value(0) })
 
     def read(self, f):
-        tag_index = self.tag_type.read_index(f)
+        if self.has_names:
+            tag_index = self.tag_type.read_index(f)
+            tag = self.tag_type.names[tag_index]
+        else:
+            tag_index = self.tag_type.read(f)
+            tag = tag_index
         if tag_index is None:
             return None
         t = self.types[tag_index]
-        tag = self.tag_type.names[tag_index]
         if t is None:
             return (tag, None)
         value = self.types[tag_index].read(f)
@@ -181,7 +194,7 @@ class Union(Type):
     @property
     def write_function(self):
         functions = tuple(t.write_function if t else None for t in self.types)
-        tag_functions=zip(self.tag_type.names, functions)
+        tag_functions=zip(self.tags, functions)
         f = self.prepare_write_function()
         f.code("""
             {{tag_type}} tag = value.tag();

@@ -6,7 +6,9 @@ from qit.domains.iterator import Iterator
 
 class Mapping(Domain):
 
-    def __init__(self, key_domain, value_domain):
+    def __init__(self, key_domain, value_domain, choose_fn=None):
+        assert not isinstance(value_domain, tuple) or choose_fn is not None
+
         map_type = Map(key_domain.type, value_domain.type)
 
         if key_domain.is_iterable() and value_domain.is_iterable():
