@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Mapping, Range, Enumerate, Sequence
+from qit import Mapping, Range, Enumerate, Sequence, Function, Int
 
 class hdict(dict):
     def __hash__(self):
@@ -57,3 +57,19 @@ def test_mapping_generator():
     for r in result:
         assert set(r.keys()) == set((5, 6))
         assert set(r.values()).issubset(set((2, 3, 4, 5, 6, 7)))
+
+
+def test_mapping2_iterator():
+    ctx = Qit()
+    r = Range(2)
+    v = Int().values(7, 10)
+    fn = Function().takes(Int(), "x").returns(Int()).code("return x % 2;")
+    m = Mapping(r, (r, v), choose_fn=fn)
+
+    result = ctx.run(m.iterate())
+    expected = [ {0: 0, 1: 7},
+                 {0: 1, 1: 7},
+                 {0: 0, 1: 10},
+                 {0: 1, 1: 10}]
+
+    assert set(map(hdict, expected)) == set(map(hdict, result))

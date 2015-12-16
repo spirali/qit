@@ -1,3 +1,5 @@
+from qit.base.int import Int
+from qit.base.union import Union
 from qit.base.map import Map
 from qit.base.function import Function
 from qit.domains.domain import Domain
@@ -9,32 +11,37 @@ class Mapping(Domain):
     def __init__(self, key_domain, value_domain, choose_fn=None):
         assert not isinstance(value_domain, tuple) or choose_fn is not None
 
-        map_type = Map(key_domain.type, value_domain.type)
-
-        if key_domain.is_iterable() and value_domain.is_iterable():
-            iterator = MappingIterator(key_domain, value_domain)
+        iterator = None
+        generator = None
+        if isinstance(value_domain, Domain):
+            map_type = Map(key_domain.type, value_domain.type)
+            if key_domain.is_iterable() and value_domain.is_iterable():
+                iterator = MappingIterator(key_domain, value_domain)
+            if key_domain.is_iterable() and value_domain.is_generable():
+                generator = Function().returns(map_type).code("""
+                    {{type}} result;
+                    {{key_itype}} key_iterator;
+                    {{key_reset}}(key_iterator);
+                    while ({{key_is_valid}}(key_iterator)) {
+                        result[{{key_value}}(key_iterator)] = {{generator}};
+                        {{key_next}}(key_iterator);
+                    }
+                    return result;
+                """, type=map_type,
+                     key_itype=key_domain.iterator.itype,
+                     key_reset=key_domain.iterator.reset_fn,
+                     key_is_valid=key_domain.iterator.is_valid_fn,
+                     key_next=key_domain.iterator.next_fn,
+                     key_value=key_domain.iterator.value_fn,
+                     generator=value_domain.generator)()
         else:
-            iterator = None
+            map_type = Map(key_domain.type, value_domain[0].type)
+            assert choose_fn
+            if key_domain.is_iterable() and \
+                    all(d.is_iterable() for d in value_domain):
+                iterator = MappingIterator2(
+                    key_domain, value_domain, choose_fn)
 
-        if key_domain.is_iterable() and value_domain.is_generable():
-            generator = Function().returns(map_type).code("""
-                {{type}} result;
-                {{key_itype}} key_iterator;
-                {{key_reset}}(key_iterator);
-                while ({{key_is_valid}}(key_iterator)) {
-                    result[{{key_value}}(key_iterator)] = {{generator}};
-                    {{key_next}}(key_iterator);
-                }
-                return result;
-            """, type=map_type,
-                 key_itype=key_domain.iterator.itype,
-                 key_reset=key_domain.iterator.reset_fn,
-                 key_is_valid=key_domain.iterator.is_valid_fn,
-                 key_next=key_domain.iterator.next_fn,
-                 key_value=key_domain.iterator.value_fn,
-                 generator=value_domain.generator)()
-        else:
-            generator = None
 
         super().__init__(map_type, iterator, generator)
 
@@ -104,3 +111,121 @@ class MappingIterator(Iterator):
             }
             return result;
         """, **env)
+
+
+class MappingIterator2(Iterator):
+
+    def __init__(self, key_domain, value_domains, choose_fn):
+        key_iterator = key_domain.iterator
+        iterators = tuple(d.iterator for d in value_domains)
+        union = Union(i.itype for i in iterators)
+        itype = Map(key_domain.type, union)
+        element_type = Map(key_domain.type,
+                           value_domains[0].type)
+        super().__init__(itype, element_type)
+
+        env = {
+            "key_itype" : key_iterator.itype,
+            "key_type" : key_iterator.element_type,
+            "key_reset" : key_iterator.reset_fn,
+            "key_is_valid" : key_iterator.is_valid_fn,
+            "key_next" : key_iterator.next_fn,
+            "key_value" : key_iterator.value_fn,
+            "type" : element_type,
+            "itype" : itype,
+            "union" : union,
+            "choose_fn" : choose_fn,
+            "_iterators" : iterators
+        }
+
+        uses = tuple(i.reset_fn for i in iterators) + \
+               tuple(i.next_fn for i in iterators) + \
+               tuple(i.is_valid_fn for i in iterators) + \
+               tuple(i.value_fn for i in iterators)
+
+
+        self.reset_fn.code("""
+            {{key_itype}} key_iterator;
+            {{key_reset}}(key_iterator);
+            {%- for i in _iterators %}
+                {{b(i.itype)}} i{{loop.index0}};
+                {{b(i.reset_fn)}}(i{{loop.index0}});
+            {%- endfor %}
+            while ({{key_is_valid}}(key_iterator)) {
+                {{key_type}} key = {{key_value}}(key_iterator);
+                switch({{choose_fn}}(key)) {
+                {%- for i in _iterators %}
+                case {{loop.index0}}:
+                    iter[key] = {{union}}({{loop.index0}}, i{{loop.index0}});
+                    break;
+                {%- endfor %}
+                default:
+                    assert(0);
+                }
+                {{key_next}}(key_iterator);
+            }
+        """, **env).uses(uses)
+
+        self.next_fn.code("""
+            if (iter.begin() == iter.end()) {
+                return;
+            }
+            auto last = --iter.end();
+            for (auto i = iter.begin(); i != last; i++) {
+                switch(i->second.tag()) {
+                {%- for i in _iterators %}
+                case {{loop.index0}}:
+                    {{b(i.next_fn)}}(i->second.get{{loop.index0}}());
+                    if ({{b(i.is_valid_fn)}}(i->second.get{{loop.index0}}())) {
+                        return;
+                    }
+                    {{b(i.reset_fn)}}(i->second.get{{loop.index0}}());
+                    break;
+                {%- endfor %}
+                default:
+                    assert(0);
+                }
+
+            }
+
+            switch(iter.rbegin()->second.tag()) {
+            {%- for i in _iterators %}
+            case {{loop.index0}}:
+                {{b(i.next_fn)}}(iter.rbegin()->second.get{{loop.index0}}());
+                return;
+            {%- endfor %}
+            default:
+                assert(0);
+            }
+        """, **env).uses(uses)
+
+        self.is_valid_fn.code("""
+            if (iter.begin() != iter.end()) {
+                switch(iter.rbegin()->second.tag()) {
+                {%- for i in _iterators %}
+                case {{loop.index0}}:
+                    return {{b(i.is_valid_fn)}}(iter.rbegin()->second.get{{loop.index0}}());
+                {%- endfor %}
+                default:
+                    assert(0);
+                }
+            } else {
+                return false;
+            }
+        """, **env).uses(uses)
+
+        self.value_fn.code("""
+            {{type}} result;
+            for (auto const &i : iter) {
+                switch(i.second.tag()) {
+                {%- for i in _iterators %}
+                case {{loop.index0}}:
+                    result[i.first] = {{b(i.value_fn)}}(i.second.get{{loop.index0}}());
+                    continue;
+                {%- endfor %}
+                default:
+                    assert(0);
+                }
+            }
+            return result;
+        """, **env).uses(uses)
