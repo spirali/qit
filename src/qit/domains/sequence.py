@@ -6,6 +6,7 @@ from qit.domains.iterator import Iterator
 from qit.base.function import Function
 from qit.functions.int import power
 
+
 class Sequence(Domain):
 
     def __init__(self, domain, size):

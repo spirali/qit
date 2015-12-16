@@ -23,6 +23,7 @@ from qit.domains.product import Product
 from qit.domains.sequence import Sequence
 from qit.domains.values import Values
 from qit.domains.enumerate import Enumerate
+from qit.domains.mapping import Mapping
 
 # Others
 from qit.domains.system import System
