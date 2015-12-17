@@ -4,6 +4,7 @@ init()
 import pytest
 
 from qit import Range, Function, Int
+from qit.functions.int import add
 from qit.base.exception import ProgramCrashed
 
 def test_iterator_first_no_default():
@@ -41,3 +42,10 @@ def test_iterator_is_nonempty():
     fn = Function().takes(Int(), "a").returns(Int()).code("return a > 100;")
     assert ctx.run(Range(91, 120, 2).iterate().filter(fn).is_nonempty())
     assert not ctx.run(Range(10, 20, 2).iterate().filter(fn).is_nonempty())
+
+def test_reduce():
+    ctx = Qit()
+    result = ctx.run(Int().values(12, 13, 7, 0, 5).iterate().reduce(add))
+    assert result == 37
+    result = ctx.run(Int().values(12).iterate().reduce(add))
+    assert result == 12

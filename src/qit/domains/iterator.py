@@ -40,6 +40,35 @@ class Iterator(QitObject):
     def filter(self, function):
         return FilterTransformation(self, function)
 
+    # To single value
+
+    def reduce(self, function):
+        f = Function(returns=self.element_type)
+        f.code(
+            """
+                {{itype}} iterator;
+                {{reset_fn}}(iterator);
+                if (!({{is_valid_fn}}(iterator))) {
+                    fprintf(stderr, "Reduce on empty iterator\\n");
+                    exit(1);
+                }
+                {{type}} value = {{value_fn}}(iterator);
+                {{next_fn}}(iterator);
+                while({{is_valid_fn}}(iterator)) {
+                    value = {{function}}(value, {{value_fn}}(iterator));
+                    {{next_fn}}(iterator);
+                }
+                return value;
+            """,
+            function=function,
+            itype=self.itype,
+            type=self.element_type,
+            value_fn=self.value_fn,
+            next_fn=self.next_fn,
+            reset_fn=self.reset_fn,
+            is_valid_fn=self.is_valid_fn)
+        return f()
+
     def is_empty(self):
         f = Function(returns=Bool())
         f.code(
