@@ -25,29 +25,34 @@ def test_system_basic():
     # System
     s = System(v, (f, g, h))
 
-    result = ctx.run(s.states(2).iterate().sort())
-    expected = [-210, # 21, f, h
-                -100, # 10, f, h
-                -23,  # 21, g, h
-                -22,  # 21, g, h
-                -21,  # 21, h
-                -20,  # 20, h, g
-                -19,  # 20, h, g
-                -10,  # 10, h
-                 10,  # 10
-                 21,  # 21
-                 22,  # 21, g
-                 23,  # 21, g
-                 24,  # 21, g, g
-                 25,  # 21, g, g
-                 100, # 10, f
-                 210, # 21, f
-                 220, # 21, g, f
-                 230, # 21, g, f
-                 1000,# 10, f, f
-                 2100,# 21, f, f
+    expected = [ (-210, 2), # 21, f, h
+                 (-100, 2), # 10, f, h
+                 (-23, 2),  # 21, g, h
+                 (-22, 2),  # 21, g, h
+                 (-21, 1),  # 21, h
+                 (-20, 2),  # 20, h, g
+                 (-19, 2),  # 20, h, g
+                 (-10, 1),  # 10, h
+                 (10, 0),  # 10
+                 (21, 0),  # 21
+                 (22, 1),  # 21, g
+                 (23, 1),  # 21, g
+                 (24, 2),  # 21, g, g
+                 (25, 2),  # 21, g, g
+                 (100, 1), # 10, f
+                 (210, 1), # 21, f
+                 (220, 2), # 21, g, f
+                 (230, 2), # 21, g, f
+                 (1000, 2), # 10, f, f
+                 (2100, 2), # 21, f, f
                 ]
+
+    result = ctx.run(s.states(2, return_depth=True).iterate().sort())
     assert result == expected
+
+    result = ctx.run(s.states(2).iterate().sort())
+    assert result == [ state for state, depth in expected ]
+
 
 def test_system_in_product():
     ctx = Qit()

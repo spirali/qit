@@ -26,14 +26,20 @@ class System(QitObject):
         self.state_type = self.state_iterator.element_type
         self.rules = tuple(SystemRule(self, rule) for rule in rules)
 
-    def states(self, depth):
-        return Domain(self.state_type, iterator=StateIterator(self, depth))
+    def states(self, depth, return_depth=False):
+        return Domain(self.state_type,
+                      iterator=StateIterator(self, depth, return_depth))
 
 
 class StateIterator(Iterator):
 
-    def __init__(self, system, depth):
+    def __init__(self, system, depth, return_depth):
         state_type = system.state_type
+        if return_depth:
+            element_type = system.state_type * Int()
+        else:
+            element_type = state_type
+
         depth = Int().value(depth)
         itype = Struct((Vector(state_type), "current"),
                        (Vector(state_type), "next"),
@@ -41,7 +47,7 @@ class StateIterator(Iterator):
                        (Int(), "rule"),
                        (Set(state_type), "found_states"),
                        (Int(), "depth"))
-        super().__init__(itype, state_type)
+        super().__init__(itype, element_type)
 
         functions = tuple(rule.function for rule in system.rules)
 
@@ -112,5 +118,9 @@ class StateIterator(Iterator):
              states=Vector(state_type)).uses(functions)
 
         self.is_valid_fn.code("return iter.new_count;")
-        self.value_fn.code(
-            "return iter.next[iter.next.size() - iter.new_count];")
+        if return_depth:
+            self.value_fn.code(
+                "return { iter.next[iter.next.size() - iter.new_count], iter.depth };")
+        else:
+            self.value_fn.code(
+                "return iter.next[iter.next.size() - iter.new_count];")
