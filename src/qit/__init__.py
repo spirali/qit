@@ -10,7 +10,7 @@ from qit.base.bool import Bool
 from qit.base.enum import Enum
 from qit.base.int import Int
 from qit.base.set import Set
-from qit.base.struct import Struct
+from qit.base.struct import Struct, KeyValue
 from qit.base.vector import Vector
 from qit.base.map import Map
 from qit.base.union import Union, Maybe

@@ -1,6 +1,6 @@
 
 from qit.base.type import Type
-
+from qit.base.function import Function
 
 class Struct(Type):
 
@@ -80,3 +80,21 @@ class Struct(Type):
         return "Struct({})".format(
                 ", ".join("({}, {})".format(repr(t), repr(name))
                 for t, name in zip(self.types, self.names)))
+
+
+class KeyValue(Struct):
+
+    def __init__(self, key_type, value_type):
+        super().__init__((key_type, "key"), (value_type, "value"))
+
+    @property
+    def value_fn(self):
+        f = Function().takes(self, "keyval").returns(self.types[1])
+        f.code("return keyval.value;")
+        return f
+
+    @property
+    def key_fn(self):
+        f = Function().takes(self, "keyval").returns(self.types[0])
+        f.code("return keyval.key;")
+        return f

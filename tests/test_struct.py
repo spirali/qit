@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Int, Struct, Variable
+from qit import Int, Struct, Variable, KeyValue
 
 def test_struct_variable():
     ctx = Qit()
@@ -31,3 +31,9 @@ def test_struct_constructor():
     s = Int() * Int() * Int()
     result = ctx.run(s.value((x, 10, x)), args={"x": 11})
     assert result == (11, 10, 11)
+
+def test_keyval():
+    ctx = Qit()
+    kv = KeyValue(Int() * Int(), Int())
+    assert ctx.run(kv.key_fn(kv.value(((22, 33), 11)))) == (22, 33)
+    assert ctx.run(kv.value_fn(kv.value(((22, 33), 11)))) == 11

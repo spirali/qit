@@ -1,6 +1,6 @@
 from qit.base.vector import Vector
 from qit.base.set import Set
-from qit.base.struct import Struct
+from qit.base.struct import Struct, KeyValue
 from qit.base.int import Int
 from qit.base.qitobject import QitObject
 from qit.domains.iterator import Iterator
@@ -26,6 +26,10 @@ class System(QitObject):
         self.state_type = self.state_iterator.element_type
         self.rules = tuple(SystemRule(self, rule) for rule in rules)
 
+    @property
+    def state_depth_type(self):
+        return KeyValue(self.state_type, Int())
+
     def states(self, depth, return_depth=False):
         return Domain(self.state_type,
                       iterator=StateIterator(self, depth, return_depth))
@@ -36,7 +40,7 @@ class StateIterator(Iterator):
     def __init__(self, system, depth, return_depth):
         state_type = system.state_type
         if return_depth:
-            element_type = system.state_type * Int()
+            element_type = system.state_depth_type
         else:
             element_type = state_type
 

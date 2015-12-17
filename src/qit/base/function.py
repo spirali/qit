@@ -31,6 +31,7 @@ class Function(QitObject):
         return True
 
     def takes(self, type, name=None, const=True):
+        assert type.is_type()
         if name is None:
             name = "p" + str(len(self.params))
         self.params += (FunctionParameter(type, name, const),)
