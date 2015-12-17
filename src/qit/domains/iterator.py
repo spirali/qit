@@ -63,7 +63,39 @@ class Iterator(QitObject):
             is_valid_fn=self.is_valid_fn)
         return f()
 
-    def first(self):
+    def first(self, if_empty_value=None):
+        f = Function(returns=self.element_type)
+        if if_empty_value is None:
+            f.code(
+                """
+                    {{itype}} iterator;
+                    {{reset_fn}}(iterator);
+                    assert ({{is_valid_fn}}(iterator));
+                    return {{value_fn}}(iterator);
+                """,
+                itype=self.itype,
+                reset_fn=self.reset_fn,
+                is_valid_fn=self.is_valid_fn,
+                value_fn=self.value_fn)
+        else:
+            f.code(
+                """
+                    {{itype}} iterator;
+                    {{reset_fn}}(iterator);
+                    if ({{is_valid_fn}}(iterator)) {
+                        return {{value_fn}}(iterator);
+                    } else {
+                        return {{if_empty_value}};
+                    }
+                """,
+                itype=self.itype,
+                reset_fn=self.reset_fn,
+                is_valid_fn=self.is_valid_fn,
+                value_fn=self.value_fn,
+                if_empty_value=self.element_type.value(if_empty_value))
+        return f()
+
+    def first_maybe(self):
         maybe = Maybe(self.element_type)
         f = Function(returns=maybe)
         f.code(
