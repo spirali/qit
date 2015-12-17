@@ -3,7 +3,7 @@ init()
 
 import pytest
 
-from qit import Range, Function, Int
+from qit import Range, Function, Int, KeyValue, Struct
 from qit.functions.int import add
 from qit.base.exception import ProgramCrashed
 
@@ -49,3 +49,12 @@ def test_reduce():
     assert result == 37
     result = ctx.run(Int().values(12).iterate().reduce(add))
     assert result == 12
+
+def test_reduce_keyval():
+    ctx = Qit()
+    kv = KeyValue(Int(), Int())
+    values = ((12, 3), (17, 1), (5, 0), (12, 4), (2, 0))
+    a = kv.values(*values).iterate().reduce(kv.max_fn)
+    b = kv.values(*values).iterate().reduce(kv.min_fn)
+    result = ctx.run((Struct(kv, kv)).value((a, b)))
+    assert ((12, 4), (5, 0)) == result

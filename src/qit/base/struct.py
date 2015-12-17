@@ -98,3 +98,17 @@ class KeyValue(Struct):
         f = Function().takes(self, "keyval").returns(self.types[0])
         f.code("return keyval.key;")
         return f
+
+    @property
+    def max_fn(self):
+        f = Function().takes(self, "keyval1").takes(self, "keyval2")
+        f.returns(self)
+        f.code("return keyval1.value < keyval2.value ? keyval2 : keyval1;")
+        return f
+
+    @property
+    def min_fn(self):
+        f = Function().takes(self, "keyval1").takes(self, "keyval2")
+        f.returns(self)
+        f.code("return keyval1.value > keyval2.value ? keyval2 : keyval1;")
+        return f
