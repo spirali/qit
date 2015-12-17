@@ -3,7 +3,7 @@ from qit.base.function import Function
 from qit.base.bool import Bool
 from qit.base.vector import Vector
 from qit.base.qitobject import QitObject
-
+from qit.base.union import Maybe
 
 class Iterator(QitObject):
 
@@ -36,6 +36,52 @@ class Iterator(QitObject):
 
     def filter(self, function):
         return FilterTransformation(self, function)
+
+    def is_empty(self):
+        f = Function(returns=Bool())
+        f.code(
+            """
+                {{itype}} iterator;
+                {{reset_fn}}(iterator);
+                return !({{is_valid_fn}}(iterator));
+            """,
+            itype=self.itype,
+            reset_fn=self.reset_fn,
+            is_valid_fn=self.is_valid_fn)
+        return f()
+
+    def is_nonempty(self):
+        f = Function(returns=Bool())
+        f.code(
+            """
+                {{itype}} iterator;
+                {{reset_fn}}(iterator);
+                return {{is_valid_fn}}(iterator);
+            """,
+            itype=self.itype,
+            reset_fn=self.reset_fn,
+            is_valid_fn=self.is_valid_fn)
+        return f()
+
+    def first(self):
+        maybe = Maybe(self.element_type)
+        f = Function(returns=maybe)
+        f.code(
+            """
+                {{itype}} iterator;
+                {{reset_fn}}(iterator);
+                if ({{is_valid_fn}}(iterator)) {
+                    return {{maybe}}(Just, {{value_fn}}(iterator));
+                } else {
+                    return {{maybe}}(Nothing);
+                }
+            """,
+            itype=self.itype,
+            reset_fn=self.reset_fn,
+            is_valid_fn=self.is_valid_fn,
+            value_fn=self.value_fn,
+            maybe=maybe)
+        return f()
 
     def to_vector(self):
         vector = Vector(self.element_type)

@@ -223,3 +223,6 @@ class Union(Type):
         else:
             return "{}({}, {})".format(
                     self.build(builder), tag.build(builder), data.build(builder))
+
+def Maybe(type):
+    return Union(Nothing=None, Just=type)

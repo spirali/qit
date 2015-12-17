@@ -13,7 +13,7 @@ from qit.base.set import Set
 from qit.base.struct import Struct
 from qit.base.vector import Vector
 from qit.base.map import Map
-from qit.base.union import Union
+from qit.base.union import Union, Maybe
 from qit.base.qclass import Class
 
 # Domains
