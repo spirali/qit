@@ -1,7 +1,7 @@
 
 from qit.base.int import Int
 from qit.base.vector import Vector
-from qit.base.struct import Struct
+from qit.base.struct import Struct, KeyValue
 from qit.base.variable import Variable
 from qit.domains.iterator import Iterator
 
@@ -45,16 +45,27 @@ class TakeTransformation(Transformation):
 
 class MapTransformation(Transformation):
 
-    def __init__(self, iterator, function):
+    def __init__(self, iterator, function, keyval):
+        if keyval:
+            element_type = KeyValue(iterator.element_type,
+                                    function.return_type)
+        else:
+            element_type = function.return_type
         super().__init__(iterator.itype,
-                         function.return_type)
+                         element_type)
         assert function.return_type is not None
         # TODO: Check compatibility of function and valid return type
         self.reset_fn = iterator.reset_fn
         self.next_fn = iterator.next_fn
         self.is_valid_fn = iterator.is_valid_fn
         x = Variable(iterator.itype, "_x")
-        self.value_fn = function(iterator.value_fn(x)).make_function((x,))
+        if keyval:
+            self.value_fn.code("""
+                const auto &value = {{value_fn}}(iter);
+                return { value, {{function}}(value) };
+            """, value_fn=iterator.value_fn, function=function)
+        else:
+            self.value_fn = function(iterator.value_fn(x)).make_function((x,))
 
 
 class SortTransformation(Transformation):

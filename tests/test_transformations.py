@@ -20,6 +20,10 @@ def test_map():
     f = Function("f").takes(p.type, "p").returns(Int()).code("return p.x + p.y;")
     result = Qit().run(p.iterate().take(6).map(f).take(4))
     assert result == [0, 1, 2, 3]
+
+    result = Qit().run(p.iterate().take(6).map_kv(f).take(4))
+    assert result == [((0,0), 0), ((1, 0), 1), ((2, 0), 2), ((3, 0), 3)]
+
     result = Qit().run(p.generate().map(f).take(4))
     assert all(x >= 0 and x <= 8 for x in result)
 

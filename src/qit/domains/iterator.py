@@ -29,7 +29,10 @@ class Iterator(QitObject):
         return TakeTransformation(self, count)
 
     def map(self, function):
-        return MapTransformation(self, function)
+        return MapTransformation(self, function, False)
+
+    def map_kv(self, function):
+        return MapTransformation(self, function, True)
 
     def sort(self, asceding=True):
         return SortTransformation(self, asceding)
