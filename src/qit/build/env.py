@@ -1,7 +1,7 @@
 
 from qit.build.builder import CppBuilder
 from qit.base.utils import makedir_if_not_exists
-from qit.base.exception import MissingFiles
+from qit.base.exception import MissingFiles, ProgramCrashed
 
 import tempfile
 import os
@@ -63,10 +63,13 @@ class CppEnv(object):
             try:
                 args = (exe_filename, fifo_name,)
                 logging.debug("Running: %s", args)
-                popen = subprocess.Popen(args)
+                popen = subprocess.Popen(
+                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 with open(fifo_name, "rb") as f:
                     result = type.read(f)
-                popen.wait()
+                stdout, stderr = popen.communicate()
+                if popen.returncode != 0:
+                    raise ProgramCrashed(stdout, stderr)
                 return result
             finally:
                 os.unlink(fifo_name)
