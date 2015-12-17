@@ -48,3 +48,6 @@ class Vector(Type):
 
     def transform_python_instance(self, obj):
         return tuple(self.element_type.value(v) for v in obj)
+
+    def __repr__(self):
+        return "Vector({})".format(repr(self.element_type))

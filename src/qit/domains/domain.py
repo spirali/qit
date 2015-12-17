@@ -18,6 +18,9 @@ class Domain(QitObject):
             self.size = None
         self.indexer = indexer
 
+    def variable(self, name):
+        return self.type.variable(name)
+
     def iterate(self):
         if self.iterator is None:
             raise QitException(

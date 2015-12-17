@@ -1,7 +1,7 @@
 
 from qit.base.qitobject import QitObject, check_qit_object
 from qit.base.constructor import Constructor
-
+from qit.base.variable import Variable
 
 class Type(QitObject):
 
@@ -13,6 +13,9 @@ class Type(QitObject):
 
     def is_type(self):
         return True
+
+    def variable(self, name):
+        return Variable(self, name)
 
     def build(self, builder):
         return builder.get_autoname(self)
