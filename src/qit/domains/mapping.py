@@ -4,6 +4,7 @@ from qit.base.map import Map
 from qit.base.function import Function
 from qit.domains.domain import Domain
 from qit.domains.iterator import Iterator
+from qit.functions.int import power
 
 
 class Mapping(Domain):
@@ -13,11 +14,15 @@ class Mapping(Domain):
 
         iterator = None
         generator = None
+        size = None
+
+        assert key_domain.is_iterable()
+
         if isinstance(value_domain, Domain):
             map_type = Map(key_domain.type, value_domain.type)
-            if key_domain.is_iterable() and value_domain.is_iterable():
+            if value_domain.is_iterable():
                 iterator = MappingIterator(key_domain, value_domain)
-            if key_domain.is_iterable() and value_domain.is_generable():
+            if value_domain.is_generable():
                 generator = Function().returns(map_type).code("""
                     {{type}} result;
                     {{key_itype}} key_iterator;
@@ -34,16 +39,38 @@ class Mapping(Domain):
                      key_next=key_domain.iterator.next_fn,
                      key_value=key_domain.iterator.value_fn,
                      generator=value_domain.generator)()
+            if key_domain.size and value_domain.size:
+                size = power(value_domain.size, key_domain.size)
         else:
             map_type = Map(key_domain.type, value_domain[0].type)
             assert choose_fn
-            if key_domain.is_iterable() and \
-                    all(d.is_iterable() for d in value_domain):
+            if all(d.is_iterable() for d in value_domain):
                 iterator = MappingIterator2(
                     key_domain, value_domain, choose_fn)
 
-
-        super().__init__(map_type, iterator, generator)
+            sizes = tuple(d.size for d in value_domain)
+            if key_domain.size and all(sizes):
+                size = Function().returns(Int()).code("""
+                    {{b(_k.itype)}} key_iterator;
+                    {{b(_k.reset_fn)}}(key_iterator);
+                    int result = 1;
+                    while ({{b(_k.is_valid_fn)}}(key_iterator)) {
+                        switch({{choose_fn}}({{b(_k.value_fn)}}(key_iterator))) {
+                        {%- for i in _i %}
+                        case {{loop.index0}}:
+                            result *= {{b(_sizes[loop.index0])}};
+                            break;
+                        {%- endfor %}
+                        default:
+                            assert(0);
+                        }
+                        {{b(_k.next_fn)}}(key_iterator);
+                    }
+                    return result;
+                """, choose_fn=choose_fn, _sizes=sizes,
+                     _k=key_domain.iterator, _i=range(len(value_domain))) \
+                        .uses(sizes + key_domain.iterator.childs)()
+        super().__init__(map_type, iterator, generator, size)
 
 
 class MappingIterator(Iterator):

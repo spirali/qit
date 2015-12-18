@@ -73,3 +73,15 @@ def test_mapping2_iterator():
                  {0: 1, 1: 10}]
 
     assert set(map(hdict, expected)) == set(map(hdict, result))
+
+def test_mapping_size():
+    ctx = Qit()
+    x = Int().variable("x")
+    m = Mapping(Range(10), Range(x))
+    assert ctx.run(m.size, args={ "x": 2}) == 1024
+
+def test_mapping2_size():
+    ctx = Qit()
+    fn = Function().takes(Int(), "x").returns(Int()).code("return x < 1 ? 2 : 0;")
+    m = Mapping(Range(4), (Range(2), Range(10),  Range(4)), choose_fn=fn)
+    assert ctx.run(m.size) == 32
