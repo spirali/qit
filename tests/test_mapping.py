@@ -58,6 +58,25 @@ def test_mapping_generator():
         assert set(r.keys()) == set((5, 6))
         assert set(r.values()).issubset(set((2, 3, 4, 5, 6, 7)))
 
+def test_mapping2_generator():
+    ctx = Qit()
+    r1 = Range(10)
+    r2 = Range(10, 20)
+    r3 = Range(20, 30)
+
+    f = Function().takes(Int(), "a").returns(Int()).code("""
+        return (a % 2) + 1;
+    """)
+
+    m = Mapping(Range(10), (r1, r2, r3), choose_fn=f)
+    result = ctx.run(m.generate().take(500))
+    assert len(result) == 500
+    for r in result:
+        assert sorted(r.keys()) == list(range(10))
+        for i in range(0, 10, 2):
+            assert r[i] >= 10 and r[i] < 20
+        for i in range(1, 10, 2):
+            assert r[i] >= 20 and r[i] < 30
 
 def test_mapping2_iterator():
     ctx = Qit()
