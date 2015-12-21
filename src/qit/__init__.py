@@ -24,6 +24,7 @@ from qit.domains.sequence import Sequence
 from qit.domains.values import Values
 from qit.domains.enumerate import Enumerate
 from qit.domains.mapping import Mapping
+from qit.domains.join import Join
 
 # Others
 from qit.domains.system import System

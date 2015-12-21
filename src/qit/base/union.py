@@ -96,17 +96,8 @@ class Union(Type):
                 {%- endfor %}
 
                 ~{{self_type}}() {
-                    switch (_tag) {
-                        {%- for name, (t, i) in _types %}
-                            case {{name}}:
-                                {%- if t %}
-                                data.d{{i}}.{{t.build_destructor(_builder)}}();
-                                {%- endif %}
-                                return;
-                        {%- endfor %}
+                        free();
                     }
-                    assert(0);
-                }
 
                 {{tag_type}} tag() const {
                     return _tag;
@@ -121,6 +112,14 @@ class Union(Type):
                         return data.d{{i}};
                     }
                     {%- endif %}
+
+                    void set{{name}}() {
+                        free();
+                        _tag = {{name}};
+                        {%- if t %}
+                        new(&data.d{{i}}) {{b(t)}}();
+                        {%- endif %}
+                    }
                 {%- endfor %}
 
                 bool operator==(const {{self_type}} &other) const {
@@ -158,6 +157,20 @@ class Union(Type):
                 }
 
                 protected:
+
+                void free() {
+                    switch (_tag) {
+                            {%- for name, (t, i) in _types %}
+                                case {{name}}:
+                                    {%- if t %}
+                                    data.d{{i}}.{{t.build_destructor(_builder)}}();
+                                    {%- endif %}
+                                    return;
+                            {%- endfor %}
+                        }
+                        assert(0);
+                }
+
                 {{tag_type}} _tag;
                 union Data {
                     Data() {};

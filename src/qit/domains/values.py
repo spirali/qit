@@ -22,7 +22,8 @@ class Values(Domain):
         """, _values=enumerate(values), _size=len(values), rand_int=rand_int)
         generator.uses(values)
 
-        super().__init__(type, iterator, generator())
+        size = Int().value(len(values))
+        super().__init__(type, iterator, generator(), size)
 
 
 class ValuesIterator(Iterator):

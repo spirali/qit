@@ -48,8 +48,12 @@ class Domain(QitObject):
     def __mul__(self, other):
         return Product(self, other)
 
+    def __add__(self, other):
+        return Join(self, other)
+
 def check_domain(obj, have_iterator=False):
     if not isinstance(obj, Domain):
         raise QitException("{} is not domain".format(obj))
 
 from qit.domains.product import Product
+from qit.domains.join import Join
