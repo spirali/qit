@@ -7,6 +7,7 @@ from qit.base.function import Function
 from qit.functions.int import multiplication_n
 
 class Product(Domain):
+    """ Cartesian product of domains """
 
     def __init__(self, *args):
 

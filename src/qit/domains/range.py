@@ -8,6 +8,9 @@ from qit.functions.int import identity
 
 
 class Range(Domain):
+    """
+        Range of integers
+    """
 
     def __init__(self, start, end=None, step=1):
         if end is None:

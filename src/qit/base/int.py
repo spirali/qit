@@ -3,6 +3,7 @@ from qit.base.type import Type
 import struct
 
 class Int(Type):
+    """ Integer type. """
 
     pass_by_value = True
 
