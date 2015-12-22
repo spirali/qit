@@ -55,8 +55,8 @@ class Domain(QitObject):
         """ Makes `Values` domain where self.type is used as underlying type"""
         return self.type.values(*values)
 
-    def make_domain(self):
-        return self
+    def as_type(self):
+        return self.type
 
     def __mul__(self, other):
         return Product(self, other)

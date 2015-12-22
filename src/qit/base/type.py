@@ -15,6 +15,9 @@ class Type(QitObject):
     def is_type(self):
         return True
 
+    def as_type(self):
+        return self
+
     def variable(self, name):
         return Variable(self, name)
 

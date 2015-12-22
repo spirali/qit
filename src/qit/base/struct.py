@@ -2,6 +2,7 @@
 from qit.base.type import Type
 from qit.base.function import Function
 
+
 class Struct(Type):
 
     autoname_prefix = "Struct"
@@ -13,10 +14,10 @@ class Struct(Type):
 
         for arg in args:
             if isinstance(arg, tuple) and len(arg) == 2:
-                types.append(arg[0])
+                types.append(arg[0].as_type())
                 names.append(arg[1])
             else:
-                types.append(arg)
+                types.append(arg.as_type())
                 names.append("v{}".format(len(names)))
 
         assert len(set(names)) == len(names)

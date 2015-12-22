@@ -31,8 +31,8 @@ class System(QitObject):
         return KeyValue(self.state_type, Int())
 
     def states(self, depth, return_depth=False):
-        return Domain(self.state_type,
-                      iterator=StateIterator(self, depth, return_depth))
+        iterator = StateIterator(self, depth, return_depth)
+        return Domain(iterator.element_type, iterator)
 
 
 class StateIterator(Iterator):

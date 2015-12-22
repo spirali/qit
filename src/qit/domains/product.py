@@ -16,11 +16,11 @@ class Product(Domain):
 
         for arg in args:
             if isinstance(arg, tuple) and len(arg) == 2:
-                domain = arg[0].make_domain()
+                domain = arg[0]
                 domains.append(domain)
                 struct_args.append((domain.type, arg[1]))
             else:
-                domains.append(arg.make_domain())
+                domains.append(arg)
                 struct_args.append(arg.type)
         type = Struct(*struct_args)
         super().__init__(

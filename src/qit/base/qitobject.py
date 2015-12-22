@@ -20,6 +20,9 @@ class QitObject(HashableEqMixin):
     def is_expression(self):
         return False
 
+    def as_type(self):
+        raise QitException("'{}' cannot be used as type.".format(self))
+
     def get_objects(self):
         result = frozenset((self,))
         for child in self.childs:
