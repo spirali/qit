@@ -19,13 +19,13 @@ def test_range_variable_iterate():
     c = Qit()
     x = Variable(Int(), "x")
     r = Range(x).iterate()
-    assert list(range(10)) == c.run(r, { "x": 10 })
+    assert list(range(10)) == c.run(r, args={"x": 10})
 
 def test_range_variable_generate():
     c = Qit()
     x = Variable(Int(), "x")
     r = Range(x).generate().take(30)
-    result = c.run(r, { "x": 3 })
+    result = c.run(r, args={"x": 3})
     for i in result:
         assert 0 <= i < 3
 

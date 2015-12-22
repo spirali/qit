@@ -22,11 +22,12 @@ class CppEnv(object):
                           "-std=c++11",
                           "-march=native")
 
-    def run_collect(self, obj, args):
-        self.check_all(obj)
+    def run_collect(self, exprs, args):
+        for expr in exprs:
+            self.check_all(expr)
         builder = CppBuilder(self)
-        builder.build_collect(obj, args)
-        return self.compile_builder(builder, obj.type)
+        builder.build_collect(exprs, args)
+        return self.compile_builder(builder, [expr.type for expr in exprs])
 
     def get_file(self):
         makedir_if_not_exists(self.build_dir)
@@ -41,7 +42,7 @@ class CppEnv(object):
                       dir=self.build_dir,
                       delete=False)
 
-    def compile_builder(self, builder, type):
+    def compile_builder(self, builder, types):
         text = builder.writer.get_string()
         makedir_if_not_exists(self.build_dir)
         with self.get_file() as f:
@@ -51,13 +52,10 @@ class CppEnv(object):
         exe_filename = filename[:-4]
         args = (self.compiler, "-o", exe_filename, filename) + self.cpp_flags
         subprocess.check_call(args)
-        if type:
-            fifo_name = exe_filename + "-fifo"
-        else:
-            fifo_name = None
-        return self.run_program(exe_filename, fifo_name, type)
+        fifo_name = exe_filename + "-fifo"
+        return self.run_program(exe_filename, fifo_name, types)
 
-    def run_program(self, exe_filename, fifo_name, type):
+    def run_program(self, exe_filename, fifo_name, types):
         if fifo_name:
             os.mkfifo(fifo_name)
             try:
@@ -66,7 +64,10 @@ class CppEnv(object):
                 popen = subprocess.Popen(
                         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 with open(fifo_name, "rb") as f:
-                    result = type.read(f)
+                    if len(types) == 1:
+                        result = types[0].read(f)
+                    else:
+                        result = [ t.read(f) for t in types ]
                 stdout, stderr = popen.communicate()
                 if popen.returncode != 0:
                     raise ProgramCrashed(stdout, stderr)

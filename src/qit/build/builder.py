@@ -27,16 +27,19 @@ class CppBuilder(object):
         self.included_filenames.add(filename)
         self.writer.line("#include \"{}\"", filename)
 
-    def build_collect(self, obj, args):
-        write_function = obj.type.write_function
+    def build_collect(self, exprs, args):
+        write_functions = [ expr.type.write_function for expr in exprs ]
         self.write_header()
-        obj.declare_all(self)
-        write_function.declare_all(self)
+        for expr in exprs:
+            expr.declare_all(self)
+        for f in write_functions:
+            f.declare_all(self)
         self.main_begin()
         self.init_fifo()
         self.init_variables(args)
-        self.writer.line(
-             "{}(output, {});", write_function.build(self), obj.build(self))
+        for expr, f in zip(exprs, write_functions):
+            self.writer.line(
+                 "{}(output, {});", f.build(self), expr.build(self))
         self.writer.line("fclose(output);")
         self.main_end()
 

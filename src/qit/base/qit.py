@@ -34,13 +34,16 @@ class Qit:
             logging.basicConfig(format="%(levelname)s: %(message)s",
                                 level=log_level)
 
-    def run(self, obj, args=None):
-        obj = obj.get_expression()
-        variables = obj.get_variables()
+    def run(self, *objs, **kw):
+        exprs = tuple(obj.get_expression() for obj in objs)
+        variables = frozenset()
+        for expr in exprs:
+            variables = variables.union(expr.get_variables())
         validate_variables(variables)
+        args = kw.get("args")
         if args is None:
             args = {}
-        return self.env.run_collect(obj,
+        return self.env.run_collect(exprs,
                                     assign_values(variables, args))
 
     def declarations(self, obj):

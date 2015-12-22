@@ -13,7 +13,7 @@ def test_function_in_function():
     f = r2.make_function((x,))
 
     r3 = Range(x).iterate().map(f)
-    assert [[], [[]], [[], [0]], [[], [0], [0,1]]] == c.run(r3, { "x": 4 })
+    assert [[], [[]], [[], [0]], [[], [0], [0,1]]] == c.run(r3, args={ "x": 4 })
 
 
 def test_outer_variables():
@@ -22,7 +22,7 @@ def test_outer_variables():
     f = Function().takes(Int(), "a").returns(Int()).reads(x)
     f.code("return a * x;")
     r = Range(x).iterate().map(f)
-    assert [0, 5, 10, 15, 20] == c.run(r, { "x": 5 })
+    assert [0, 5, 10, 15, 20] == c.run(r, args={ "x": 5 })
 
 
 def test_outer_variables_in_fn_iterator():
