@@ -111,6 +111,16 @@ class Union(Type):
                     const {{b(t)}}& get{{name}}() const {
                         return data.d{{i}};
                     }
+
+                    void set{{name}}(const {{b(t)}} &value) {
+                        free();
+                        _tag = {{name}};
+                        {%- if t %}
+                        new(&data.d{{i}}) {{b(t)}}(value);
+                        {%- endif %}
+                    }
+
+
                     {%- endif %}
 
                     void set{{name}}() {
@@ -155,6 +165,27 @@ class Union(Type):
                     }
                     return false;
                 }
+
+                {{self_type}} & operator= (const {{self_type}} &other)
+                {
+                    if (this != &other)
+                    {
+                        switch (other.tag()) {
+                            {%- for name, (t, i) in _types %}
+                                case {{name}}:
+                                    {%- if t %}
+                                        set{{name}}(other.get{{name}}());
+                                    {%- else %}
+                                         set{{name}}();
+                                    {%- endif %}
+                                    break;
+                            {%- endfor %}
+                            default: assert(0);
+                        }
+                    }
+                    return *this;
+                }
+
 
                 protected:
 
