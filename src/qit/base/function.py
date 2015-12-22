@@ -26,6 +26,7 @@ class Function(QitObject):
         self.inline_code = None
         self.inline_code_vars = ()
         self.used_expressions = ()
+        self.read_variables = ()
 
     def is_function(self):
         return True
@@ -48,6 +49,7 @@ class Function(QitObject):
         return self
 
     def reads(self, *variables):
+        self.read_variables = variables
         self.uses(variables)
         return self
 
@@ -94,6 +96,11 @@ class Function(QitObject):
         if self.is_external():
            builder.write_function_external_call(self)
         else:
+           for v in self.read_variables:
+               builder.writer.line("const {} &{} = {};",
+                   v.type.build(builder),
+                   v.name,
+                   v.build(builder))
            assert self.inline_code is not None
            builder.write_code(
                    self.inline_code, self.inline_code_vars)
@@ -130,14 +137,16 @@ class FunctionFromExpression(Function):
         self.uses((expression,))
         if params is None:
             params = expression.get_variables()
+        params = tuple(params)
         for v in params:
-            self.takes(v.type, v.name)
+            self.takes(v.type, v.build(None))
         self.returns(expression.type)
         self.expression = expression
+        self._bounded_variables = params
 
     @property
     def bounded_variables(self):
-        return frozenset(Variable(p.type, p.name) for p in self.params)
+        return frozenset(self._bounded_variables)
 
     def write_code(self, builder):
         builder.write_return_expression(self.expression)

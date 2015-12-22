@@ -82,7 +82,7 @@ class CppBuilder(object):
         for variable, value in sorted(args.items(), key=lambda v: v[0].name):
             self.writer.line("{} {}({});",
                              variable.type.build(self),
-                             variable.name,
+                             variable.build(self),
                              value.build(self))
 
     def write_header(self):
@@ -202,16 +202,15 @@ class CppBuilder(object):
         function_name = self.get_autoname(function)
         self.writer.class_begin(function_name)
         self.writer.line("public:")
-
         variables = function.get_variables()
         if variables:
             variables = sorted_variables(variables)
             self.writer.line("{}({}) : {} {{}}",
                              function_name,
                              ",".join("const {} &{}".format(v.type.build(self),
-                                                      v.name)
+                                                      v.build(self))
                                       for v in variables),
-                             ",".join("{0}({0})".format(v.name)
+                             ",".join("{0}({0})".format(v.build(self))
                                       for v in variables))
         self.writer.line("{}", function.build_declaration(self, "operator()"))
         self.writer.block_begin()
@@ -221,7 +220,7 @@ class CppBuilder(object):
         for variable in variables:
             self.writer.line("const {} &{};",
                              variable.type.build(self),
-                             variable.name);
+                             variable.build(self));
 
         self.writer.class_end()
 

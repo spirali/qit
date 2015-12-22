@@ -58,13 +58,13 @@ class MapTransformation(Transformation):
         self.reset_fn = iterator.reset_fn
         self.next_fn = iterator.next_fn
         self.is_valid_fn = iterator.is_valid_fn
-        x = Variable(iterator.itype, "_x")
         if keyval:
             self.value_fn.code("""
                 const auto &value = {{value_fn}}(iter);
                 return { value, {{function}}(value) };
             """, value_fn=iterator.value_fn, function=function)
         else:
+            x = Variable(iterator.itype, "_qit_map_x")
             self.value_fn = function(iterator.value_fn(x)).make_function((x,))
 
 

@@ -1,7 +1,7 @@
 from testutils import Qit, init
 init()
 
-from qit import Range, Variable, Int, Sequence, Function, Vector
+from qit import Range, Variable, Int, Sequence, Function
 
 def test_function_in_function():
     c = Qit()
@@ -62,3 +62,10 @@ def test_function_constant():
     f = Int().value(7).make_function()
     result = c.run(f())
     assert result == 7
+
+def test_function_transport_freevars():
+    ctx = Qit()
+    x = Int().variable("x")
+    f = Function().returns(Int()).code("return {{x}};", x=x)
+    g = Function().returns(Int()).code("return {{f}}();", f=f)
+    assert 11 == ctx.run(g(), args={"x": 11 })

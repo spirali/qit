@@ -12,7 +12,7 @@ class Variable(Expression):
         return True
 
     def build(self, builder):
-        return self.name
+        return "qit_freevar_" + self.name
 
     def get_variables(self):
         return frozenset((self,))
