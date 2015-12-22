@@ -56,7 +56,15 @@ class Domain(QitObject):
         return Product(self, other)
 
     def __add__(self, other):
-        return Join(self, other)
+        size1 = self.size
+        size2 = other.size
+
+        if size1 is None:
+            size1 = 1
+        if size2 is None:
+            size2 = 1
+
+        return Join((self, other), (size1, size2))
 
 def check_domain(obj, have_iterator=False):
     if not isinstance(obj, Domain):
