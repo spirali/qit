@@ -14,7 +14,11 @@ Basic class `Domain`
 
    .. py:method:: generate()
 
-   Return the generator of the domain if domain is generable, otherwise throws an exception.
+   Returns iterator that calls the generator of the domain if domain is generable, otherwise throws an exception.
+
+   .. py:method:: generate_one()
+
+   Returns generator of the domain if domain is generable, otherwise throws an exception.
 
    .. py:method:: is_generable()
 

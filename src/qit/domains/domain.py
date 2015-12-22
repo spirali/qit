@@ -41,6 +41,12 @@ class Domain(QitObject):
                     "Domain '{}' does not have an generator".format(repr(self)))
         return GeneratorIterator(self.generator)
 
+    def generate_one(self):
+        if self.generator is None:
+            raise QitException(
+                    "Domain '{}' does not have an generator".format(repr(self)))
+        return self.generator
+
     def is_generable(self):
         """ Returns True if domain has an generator """
         return self.generator is not None
