@@ -2,6 +2,7 @@
 from qit.base.qitobject import QitObject, check_qit_object
 from qit.base.constructor import Constructor
 from qit.base.variable import Variable
+from qit.base.exception import QitException
 
 class Type(QitObject):
 
@@ -35,7 +36,9 @@ class Type(QitObject):
     def value(self, value):
         if self.is_python_instance(value):
             return Constructor(self, self.transform_python_instance(value))
-        check_qit_object(value)
+        if not isinstance(value, QitObject):
+            raise QitException(
+                "Cannot build value from '{}' for type {}".format(value, self))
         value.check_expression_type(self)
         return value
 
