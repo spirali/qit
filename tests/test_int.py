@@ -10,7 +10,7 @@ def test_int_value():
 def test_int_variable():
     ctx = Qit()
     x = Variable(Int(), "x")
-    assert ctx.run(x, args={"x": 10}) == 10
+    assert ctx.run(x, args={x: 10}) == 10
 
 def test_int_function():
     ctx = Qit()
@@ -21,4 +21,4 @@ def test_int_function_variables():
     ctx = Qit()
     x = Variable(Int(), "x")
     f = Function().takes(Int(), "a").returns(Int()).reads(x).code("return a + x;")
-    assert ctx.run(f(10), args={"x": 15}) == 25
+    assert ctx.run(f(10), args={x: 15}) == 25

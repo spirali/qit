@@ -58,12 +58,12 @@ def test_values_int_variable():
     y = Variable(Int(), "y")
 
     r = Int().values(x, 7, y)
-    result = ctx.run(r.iterate(), args={"x": 2, "y": 11})
+    result = ctx.run(r.iterate(), args={x: 2, y: 11})
     assert result == [ 2, 7, 11 ]
 
 def test_values_product_variable():
     ctx = Qit()
     x = Variable(Int() * Int(), "x")
     r = (Int() * Int()).values(x, (2,3))
-    result = ctx.run(r.iterate(), args={"x": (7,5)})
+    result = ctx.run(r.iterate(), args={x: (7,5)})
     assert result == [(7,5),(2,3)]

@@ -76,5 +76,5 @@ def test_system_rule_variable():
     x = Variable(Int(), "x")
     f = Function("f").takes(Int(), "a").returns(Int()).reads(x).code("return x;")
     s = System(Int().values(5), (f,))
-    result = ctx.run(s.states(3).iterate(), args={"x": 5})
+    result = ctx.run(s.states(3).iterate(), args={x: 5})
     assert result == [5]

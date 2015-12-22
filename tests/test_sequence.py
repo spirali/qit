@@ -49,7 +49,7 @@ def test_sequence_variable():
     x = Variable(Int(), "x")
     y = Variable(Int(), "y")
     r = Sequence(Range(y), x).iterate()
-    result = ctx.run(r, args={"x": 2, "y" : 3})
+    result = ctx.run(r, args={x: 2, y : 3})
 
     rr = list(range(3))
     expected = set(itertools.product(rr, rr))

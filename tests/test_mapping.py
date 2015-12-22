@@ -97,7 +97,7 @@ def test_mapping_size():
     ctx = Qit()
     x = Int().variable("x")
     m = Mapping(Range(10), Range(x))
-    assert ctx.run(m.size, args={ "x": 2}) == 1024
+    assert ctx.run(m.size, args={x: 2}) == 1024
 
 def test_mapping2_size():
     ctx = Qit()

@@ -114,7 +114,9 @@ def test_product_size():
     r1 = Range(4)
     r2 = Range(Variable(Int(), "x"))
     r3 = Range(Variable(Int(), "y"))
-    assert ctx.run((r1 * r2 * r3).size, args={"x": 10, "y": 2}) == 80
+    assert ctx.run((r1 * r2 * r3).size,
+            args={Variable(Int(), "x"): 10,
+                  Variable(Int(), "y"): 2}) == 80
 
 def test_product_size_none():
     r1 = Range(4)

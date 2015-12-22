@@ -12,7 +12,7 @@ def test_take_variable():
     ctx = Qit()
     x = Variable(Int(), "x")
     r = Range(10).generate().take(x)
-    result = ctx.run(r, args={"x": 5})
+    result = ctx.run(r, args={x: 5})
     assert len(result) == 5
 
 def test_map():

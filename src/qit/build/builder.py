@@ -1,6 +1,8 @@
 
 from qit.build.writer import CppWriter
 from qit.base.utils import sorted_variables
+from qit.base.utils import validate_variables, sort_by_deps
+from qit.base.exception import QitException
 import jinja2
 
 class CppBuilder(object):
@@ -27,16 +29,37 @@ class CppBuilder(object):
         self.included_filenames.add(filename)
         self.writer.line("#include \"{}\"", filename)
 
+    def get_used_variables(self, exprs, args):
+        variables = frozenset()
+        for expr in exprs:
+            variables = variables.union(expr.get_variables())
+        prev = frozenset()
+        while prev != variables:
+            prev = variables
+            for v in variables:
+                a = args.get(v)
+                if a is None:
+                    raise QitException("Unbound variable '{}'".format(v))
+                variables = variables.union(a.get_variables())
+        return variables
+
     def build_collect(self, exprs, args):
+        variables = self.get_used_variables(exprs, args)
+        validate_variables(variables)
+        deps = { v: args[v].get_variables() for v in variables }
+        variables = sort_by_deps(deps)
+
         write_functions = [ expr.type.write_function for expr in exprs ]
         self.write_header()
+        for v in variables:
+            args[v].declare_all(self)
         for expr in exprs:
             expr.declare_all(self)
         for f in write_functions:
             f.declare_all(self)
         self.main_begin()
         self.init_fifo()
-        self.init_variables(args)
+        self.init_variables(variables, args)
         for expr, f in zip(exprs, write_functions):
             self.writer.line(
                  "{}(output, {});", f.build(self), expr.build(self))
@@ -81,8 +104,9 @@ class CppBuilder(object):
         self.writer.line("assert(argc > 1);")
         self.writer.line("FILE *output = fopen(argv[1], \"w\");")
 
-    def init_variables(self, args):
-        for variable, value in sorted(args.items(), key=lambda v: v[0].name):
+    def init_variables(self, variables, args):
+        for variable in variables:
+            value = args[variable]
             self.writer.line("{} {}({});",
                              variable.type.build(self),
                              variable.build(self),

@@ -15,11 +15,11 @@ def test_map_value():
 def test_map_variable():
     ctx = Qit()
     m = Variable(Map(Int(), Int()), "m")
-    assert ctx.run(m, args={"m": { 2: 1, 1: 2 }}) == { 2: 1, 1: 2 }
+    assert ctx.run(m, args={m: { 2: 1, 1: 2 }}) == { 2: 1, 1: 2 }
 
     m = Map(Int(), Int() * Int())
     x = Variable(Int(), "x")
-    assert ctx.run(m.value({1: (x, 20)}), args={"x": 123}) == {1: (123, 20)}
+    assert ctx.run(m.value({1: (x, 20)}), args={x: 123}) == {1: (123, 20)}
 
 def test_map_function():
     ctx = Qit()

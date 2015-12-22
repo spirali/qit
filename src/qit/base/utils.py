@@ -14,13 +14,18 @@ def validate_variables(variables):
                     "Variable '{0}.name' was used with two different types:"
                     "{0.type} and {1.type}".format(v, tmp[i+1]))
 
-def assign_values(variables, args):
-    result = {}
-    for v in variables:
-        value = args.get(v.name)
-        if value is None:
-            raise QitException("Unbound variable {}".format(v.name))
-        result[v] = v.type.value(args[v.name])
+def sort_by_deps(deps):
+    keys = list(deps.keys())
+    result = []
+    while keys:
+        for key in keys:
+            if all(d in result for d in deps[key]):
+                result.append(key)
+                keys.remove(key)
+                break
+        else:
+            print(deps)
+            raise QitException("Circular dependancy: {}".format(keys))
     return result
 
 def is_valid_name(value):

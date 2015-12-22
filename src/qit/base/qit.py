@@ -1,5 +1,4 @@
 from qit.build.env import CppEnv
-from qit.base.utils import validate_variables, assign_values
 from qit.base.qitobject import check_qit_object
 
 import logging
@@ -36,15 +35,12 @@ class Qit:
 
     def run(self, *objs, **kw):
         exprs = tuple(obj.get_expression() for obj in objs)
-        variables = frozenset()
-        for expr in exprs:
-            variables = variables.union(expr.get_variables())
-        validate_variables(variables)
         args = kw.get("args")
         if args is None:
             args = {}
-        return self.env.run_collect(exprs,
-                                    assign_values(variables, args))
+        else:
+            args = { v: v.type.value(value) for v, value in args.items() }
+        return self.env.run_collect(exprs, args)
 
     def declarations(self, obj):
         check_qit_object(obj)

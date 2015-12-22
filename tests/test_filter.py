@@ -45,5 +45,5 @@ def test_filter_free_variables():
     ctx = Qit()
     x = Variable(Int(), "x")
     f = Function().takes(Int(), "a").returns(Bool()).reads(x).code("return a != x;")
-    result = ctx.run(Range(5).iterate().filter(f), args={"x" : 3})
+    result = ctx.run(Range(5).iterate().filter(f), args={x : 3})
     assert result == [0, 1, 2, 4]

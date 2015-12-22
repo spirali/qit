@@ -8,7 +8,7 @@ def test_vector_variable():
     s = Struct(Int(), Int())
     v = Vector(s)
     x = Variable(v, "x")
-    result = ctx.run(x, args={"x": [(11,12), (5, 2)]})
+    result = ctx.run(x, args={x: [(11,12), (5, 2)]})
     assert result == [(11,12), (5, 2)]
 
 def test_vector_constructor():
@@ -17,6 +17,6 @@ def test_vector_constructor():
     v = Vector(s)
     x = Variable(s, "x")
     result = ctx.run(v.value([x, s.value((7, 2)), (1, 2)]),
-            args={"x": (11,12)})
+            args={x: (11,12)})
     assert result == [ (11, 12), (7, 2), (1, 2) ]
 

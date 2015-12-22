@@ -8,7 +8,7 @@ def test_struct_variable():
     s = Struct(Int(), Int())
     s2 = Struct(s, Int(), s)
     x = Variable(s2, "x")
-    result = ctx.run(x, args={"x": ((11,12), 13, (5, 2))})
+    result = ctx.run(x, args={x: ((11,12), 13, (5, 2))})
     assert result == ((11,12), 13, (5, 2))
 
 def test_struct_mul():
@@ -29,7 +29,7 @@ def test_struct_constructor():
     ctx = Qit()
     x = Variable(Int(), "x")
     s = Int() * Int() * Int()
-    result = ctx.run(s.value((x, 10, x)), args={"x": 11})
+    result = ctx.run(s.value((x, 10, x)), args={x: 11})
     assert result == (11, 10, 11)
 
 def test_keyval():

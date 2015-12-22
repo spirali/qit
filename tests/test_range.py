@@ -19,13 +19,13 @@ def test_range_variable_iterate():
     c = Qit()
     x = Variable(Int(), "x")
     r = Range(x).iterate()
-    assert list(range(10)) == c.run(r, args={"x": 10})
+    assert list(range(10)) == c.run(r, args={x: 10})
 
 def test_range_variable_generate():
     c = Qit()
     x = Variable(Int(), "x")
     r = Range(x).generate().take(30)
-    result = c.run(r, args={"x": 3})
+    result = c.run(r, args={x: 3})
     for i in result:
         assert 0 <= i < 3
 
@@ -74,7 +74,7 @@ def test_min_step_range_iterate_variables():
     z = Variable(Int(), "z")
     expr = Range(x, y, z).iterate()
     c = Qit()
-    assert list(range(10, 20, 4)) == c.run(expr, args={"x": 10, "y": 20, "z": 4})
+    assert list(range(10, 20, 4)) == c.run(expr, args={x: 10, y: 20, z: 4})
 
 def test_range_size():
     ctx = Qit()
@@ -85,8 +85,8 @@ def test_range_size():
     end = Variable(Int(), "end")
     step = Variable(Int(), "step")
     r = Range(start, end, step)
-    assert ctx.run(r.size, args={ "start" : 5, "end" : 10, "step" : 1 }) == 5
-    assert ctx.run(r.size, args={ "start" : 5, "end" : 10, "step" : 2 }) == 2
+    assert ctx.run(r.size, args={ start : 5, end : 10, step : 1 }) == 5
+    assert ctx.run(r.size, args={ start : 5, end : 10, step : 2 }) == 2
 
 def test_range_indexer():
     ctx = Qit()
@@ -97,5 +97,5 @@ def test_range_indexer():
     end = Variable(Int(), "end")
     step = Variable(Int(), "step")
     r = Range(start, end, step)
-    result = ctx.run(r.iterate().map(r.indexer), args={"start" : 5, "end": 21, "step" : 3})
+    result = ctx.run(r.iterate().map(r.indexer), args={start : 5, end: 21, step : 3})
     assert result == list(range(6))
