@@ -9,7 +9,7 @@ BUILD_DIR = os.path.join(TEST_DIR, "build")
 
 def init():
     if SRC_DIR not in sys.path:
-        sys.path.append(SRC_DIR)
+        sys.path.insert(0, SRC_DIR)
     if not os.path.isdir(BUILD_DIR):
         os.makedirs(BUILD_DIR)
 
