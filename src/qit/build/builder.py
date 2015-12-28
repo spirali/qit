@@ -232,28 +232,38 @@ class CppBuilder(object):
             v = ",".join(prefix + v.build(self) for v in variables)
             return "({}({}))".format(function_name, v)
         else:
-            return "{}()".format(function_name)
+            return "{}".format(function_name)
 
     def declare_function(self, function):
         if self.check_declaration_key(function):
             return
 
+        function_name = self.get_name(function)
+        variables = function.get_variables()
+
         if function.is_external():
             self.include_filename(self.env.get_function_filename(function))
 
-        function_name = self.get_name(function)
+        if not variables:
+            decl = function.build_declaration(self, function_name)
+            self.writer.line("{}", decl)
+            self.writer.block_begin()
+            function.write_code(self)
+            self.writer.block_end()
+            self.writer.emptyline()
+            return
+        variables = sorted_variables(variables)
+
         self.writer.class_begin(function_name)
         self.writer.line("public:")
-        variables = function.get_variables()
-        if variables:
-            variables = sorted_variables(variables)
-            self.writer.line("{}({}) : {} {{}}",
-                             function_name,
-                             ",".join("const {} &{}".format(v.type.build(self),
-                                                      v.build(self))
-                                      for v in variables),
-                             ",".join("{0}({0})".format(v.build(self))
-                                      for v in variables))
+        variables = sorted_variables(variables)
+        self.writer.line("{}({}) : {} {{}}",
+                         function_name,
+                         ",".join("const {} &{}".format(v.type.build(self),
+                                                  v.build(self))
+                                  for v in variables),
+                         ",".join("{0}({0})".format(v.build(self))
+                                  for v in variables))
         self.writer.line("{}", function.build_declaration(self, "operator()"))
         self.writer.block_begin()
         function.write_code(self)
@@ -265,6 +275,7 @@ class CppBuilder(object):
                              variable.build(self));
 
         self.writer.class_end()
+        self.writer.emptyline()
 
     def write_return_expression(self, expression):
         self.writer.line("return {};", expression.build(self))
