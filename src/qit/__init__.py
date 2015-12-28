@@ -1,7 +1,7 @@
 
-from qit.base.qit import Qit
 
 # Basic
+from qit.base.qit import Qit
 from qit.base.variable import Variable
 from qit.base.function import Function
 
@@ -28,3 +28,6 @@ from qit.domains.join import Join
 
 # Others
 from qit.domains.system import System
+
+# Utils
+from qit.base.qitobject import fill_names

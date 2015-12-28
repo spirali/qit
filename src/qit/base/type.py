@@ -6,7 +6,6 @@ from qit.base.exception import QitException
 
 class Type(QitObject):
 
-    autoname_prefix = "Type"
     pass_by_value = False
 
     def __init__(self):
@@ -22,7 +21,7 @@ class Type(QitObject):
         return Variable(self, name)
 
     def build(self, builder):
-        return builder.get_autoname(self)
+        return builder.get_name(self)
 
     def build_destructor(self, builder):
         return "~" + self.build(builder)
@@ -55,7 +54,9 @@ class Type(QitObject):
     def prepare_write_function(self):
         from qit.base.function import Function
         from qit.base.file import File
-        return Function().takes(File(), "output").takes(self, "value")
+        f = Function(("write", self.name))
+        f.takes(File(), "output").takes(self, "value")
+        return f
 
     def method(self, name, const=True):
         from qit.base.function import Function

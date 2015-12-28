@@ -12,7 +12,7 @@ class Enumerate(Domain):
     def __init__(self, *names):
         type = Enum(*names)
         iterator = EnumIterator(type)
-        generator = Function().returns(type).code("""
+        generator = Function(("generator", self)).returns(type).code("""
             return static_cast<{{type}}>({{rand_int}}(0, {{_size}}));""",
             _size=len(names), rand_int=rand_int, type=type)()
         size = Int().value(len(names))

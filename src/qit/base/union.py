@@ -7,8 +7,6 @@ from qit.base.utils import stable_unique
 
 class Union(Type):
 
-    autoname_prefix = "Union"
-
     def __init__(self, types=None, **kw):
         if types is not None:
             self.tag_type = Int()

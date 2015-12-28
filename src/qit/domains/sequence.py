@@ -19,7 +19,8 @@ class Sequence(Domain):
             iterator = None
 
         if domain.generator is not None:
-            generator = Function().returns(vector).code("""
+            generator_fn = Function(("generator", self.name))
+            generator_fn.returns(vector).code("""
                 {{type}} result;
                 size_t size = {{size}};
                 result.reserve(size);
@@ -27,7 +28,8 @@ class Sequence(Domain):
                     result.push_back({{generator}});
                 }
                 return result;
-            """, generator=domain.generator, size=size, type=vector)()
+            """, generator=domain.generator, size=size, type=vector)
+            generator = generator_fn()
         else:
             generator = None
 

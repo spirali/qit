@@ -30,7 +30,7 @@ class Range(Domain):
             indexer = identity
         else:
             size = range_size(start, end, step)
-            indexer = Function().returns(Int())
+            indexer = Function("index" + self.name).returns(Int())
             indexer.takes(Int(), "_v")
             indexer.code("return (_v - {{start}}) / {{step}};",
                          start=start, step=step)
@@ -42,7 +42,7 @@ class Range(Domain):
                          indexer)
 
 
-range_size = Function()
+range_size = Function("size_Range")
 range_size.takes(Int(), "start")
 range_size.takes(Int(), "end")
 range_size.takes(Int(), "step")
@@ -56,6 +56,6 @@ class RangeIterator(Iterator):
         itype = Int()
         super().__init__(itype, Int())
         self.reset_fn.code("iter = {{start}};", start=start)
-        self.next_fn.code("iter+={{step}};", step=step)
+        self.next_fn.code("iter += {{step}};", step=step)
         self.is_valid_fn.code("return iter < {{end}};", end=end)
-        self.value_fn = identity
+        self.value_fn.code("return iter;")

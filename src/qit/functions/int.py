@@ -2,7 +2,7 @@ from qit.base.function import Function
 from qit.base.int import Int
 
 def multiplication_n(size):
-     f = Function().returns(Int())
+     f = Function("mul").returns(Int())
      for i in range(size):
         f.takes(Int())
      code = "*".join(p.name for p in f.params)
@@ -12,7 +12,7 @@ def multiplication_n(size):
 mul = multiplication_n(2)
 
 def addition_n(size):
-     f = Function().returns(Int())
+     f = Function("add").returns(Int())
      for i in range(size):
         f.takes(Int())
      code = "+".join(p.name for p in f.params)
@@ -22,7 +22,7 @@ def addition_n(size):
 add = addition_n(2)
 
 # Naive way of making power, but it is sufficient for now
-power = Function().takes(Int(), "base").takes(Int(), "power").returns(Int())
+power = Function("power").takes(Int(), "base").takes(Int(), "power").returns(Int())
 power.code("""
     int result = 1;
     int p = power;
@@ -33,7 +33,9 @@ power.code("""
     return result;
 """)
 
-identity = Function().takes(Int(), "a").returns(Int()).code("return a;")
+identity = Function("identity")
+identity.takes(Int(), "a").returns(Int()).code("return a;")
 
-subtract = Function().takes(Int(), "a").takes(Int(), "b").returns(Int())
+subtract = Function("subtract")
+subtract.takes(Int(), "a").takes(Int(), "b").returns(Int())
 subtract.code("return a - b;")

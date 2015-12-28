@@ -2,8 +2,6 @@ from qit.base.type import Type
 
 class Class(Type):
 
-    autoname_prefix = "Class"
-
     def __init__(self, self_type, methods):
         self.self_type = self_type
         self.methods = tuple(methods)

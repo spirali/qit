@@ -6,7 +6,25 @@ class QitObject(HashableEqMixin):
 
     childs = ()
     bounded_variables = frozenset()
-    autoname_prefix = "QitObject"
+
+    _name = None
+
+    @property
+    def name(self):
+        if self._name is None:
+            return type(self).__name__
+        else:
+            return self._name
+
+    @name.setter
+    def name(self, value):
+        assert value is None or \
+               isinstance(value, tuple) or \
+               isinstance(value, str)
+        if isinstance(value, tuple):
+            value = "_".join(s if isinstance(s, str) else s.name
+                             for s in value)
+        self._name = value
 
     def is_type(self):
         return False
@@ -62,3 +80,9 @@ class QitObject(HashableEqMixin):
 def check_qit_object(obj):
     if not isinstance(obj, QitObject):
         raise InvalidType(obj, "QitObject")
+
+
+def fill_names(name_dict):
+    for name, obj in name_dict.items():
+        if isinstance(obj, QitObject):
+            obj.name = name

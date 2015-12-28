@@ -39,7 +39,7 @@ class Product(Domain):
     def _make_generator(self, type, domains):
         generators = tuple(d.generator for d in domains)
         if all(generators):
-            generator = Function().returns(type).code("""
+            generator = Function(("generator", self.name)).returns(type).code("""
             return {
             {% for g in _generators %}
                {{b(g)}}{% if not loop.last %},{% endif %}

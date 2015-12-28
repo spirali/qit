@@ -15,8 +15,6 @@ class FunctionParameter(HashableEqMixin):
 
 class Function(QitObject):
 
-    autoname_prefix = "Function"
-
     def __init__(self, name=None, returns=None):
         self.name = name
         self.params = ()

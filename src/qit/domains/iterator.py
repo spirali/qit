@@ -7,13 +7,15 @@ from qit.base.union import Maybe
 
 class Iterator(QitObject):
 
-    def __init__(self, itype, element_type):
+    def __init__(self, itype, element_type, name=None):
+        if name is None:
+            name = type(self).__name__
         self.itype = itype
         self.element_type = element_type
-        self.reset_fn = Function().takes(itype, "iter", const=False)
-        self.next_fn = Function().takes(itype, "iter", const=False)
-        self.is_valid_fn = Function().takes(itype, "iter").returns(Bool())
-        self.value_fn = Function().takes(itype, "iter").returns(element_type)
+        self.reset_fn = Function(("reset",  name)).takes(itype, "iter", const=False)
+        self.next_fn = Function(("next", name)).takes(itype, "iter", const=False)
+        self.is_valid_fn = Function(("is_valid", name)).takes(itype, "iter").returns(Bool())
+        self.value_fn = Function(("value", name)).takes(itype, "iter").returns(element_type)
 
     @property
     def childs(self):
@@ -43,7 +45,7 @@ class Iterator(QitObject):
     # To single value
 
     def reduce(self, function):
-        f = Function(returns=self.element_type)
+        f = Function(("reduce", self), returns=self.element_type)
         f.code(
             """
                 {{itype}} iterator;
@@ -70,7 +72,7 @@ class Iterator(QitObject):
         return f()
 
     def is_empty(self):
-        f = Function(returns=Bool())
+        f = Function(("is_iterator_empty", self), returns=Bool())
         f.code(
             """
                 {{itype}} iterator;
@@ -83,7 +85,7 @@ class Iterator(QitObject):
         return f()
 
     def is_nonempty(self):
-        f = Function(returns=Bool())
+        f = Function(("is_iterator_nonempty", self), returns=Bool())
         f.code(
             """
                 {{itype}} iterator;
@@ -96,7 +98,7 @@ class Iterator(QitObject):
         return f()
 
     def first(self, if_empty_value=None):
-        f = Function(returns=self.element_type)
+        f = Function(("iterator_first", self), returns=self.element_type)
         if if_empty_value is None:
             f.code(
                 """
@@ -129,7 +131,7 @@ class Iterator(QitObject):
 
     def first_maybe(self):
         maybe = Maybe(self.element_type)
-        f = Function(returns=maybe)
+        f = Function(("iterator_first_maybe", self), returns=maybe)
         f.code(
             """
                 {{itype}} iterator;
@@ -149,7 +151,7 @@ class Iterator(QitObject):
 
     def to_vector(self):
         vector = Vector(self.element_type)
-        f = Function(returns=vector)
+        f = Function(("iterator_to_vector", self), returns=vector)
         f.code(
             """
                 {{vector}} output;

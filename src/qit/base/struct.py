@@ -5,8 +5,6 @@ from qit.base.function import Function
 
 class Struct(Type):
 
-    autoname_prefix = "Struct"
-
     def __init__(self, *args):
         self.name = None
         names = []

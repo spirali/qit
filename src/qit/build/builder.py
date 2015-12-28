@@ -10,17 +10,18 @@ class CppBuilder(object):
     def __init__(self, env):
         self.env = env
         self.writer = CppWriter()
-        self.id_counter = 100
         self.declaration_keys = []
-        self.autonames = {}
+        self.names = {}
+        self.ids = set()
         self.included_filenames = set()
 
-    def get_autoname(self, obj):
-        name = self.autonames.get(obj)
+    def get_name(self, obj):
+        name = self.names.get(obj)
         if name is not None:
             return name
-        name = self.new_id(obj.autoname_prefix)
-        self.autonames[obj] = name
+        obj_name = obj.name
+        name = self.new_id(obj_name)
+        self.names[obj] = name
         return name
 
     def include_filename(self, filename):
@@ -141,9 +142,23 @@ class CppBuilder(object):
         self.writer.line("return 0;")
         self.writer.block_end();
 
-    def new_id(self, prefix="v"):
-        self.id_counter += 1
-        return "{}{}".format(prefix, self.id_counter)
+    def new_id(self, name):
+        prefix = "q_" + name
+        s = ""
+        while prefix[-1].isdigit():
+            s += prefix[-1]
+            prefix = str(prefix[:-1])
+        if s:
+            suffix = int(s) + 1
+        else:
+            suffix = 1
+
+        name = prefix + str(suffix)
+        while name in self.ids:
+            suffix += 1
+            name = prefix + str(suffix)
+        self.ids.add(name)
+        return name
 
     ## Method for multiple dispatch of base classes
 
@@ -211,7 +226,7 @@ class CppBuilder(object):
         return "{}({})".format(functor, args)
 
     def build_functor(self, function, prefix=""):
-        function_name = self.get_autoname(function)
+        function_name = self.get_name(function)
         variables = sorted_variables(function.get_variables())
         if variables:
             v = ",".join(prefix + v.build(self) for v in variables)
@@ -226,7 +241,7 @@ class CppBuilder(object):
         if function.is_external():
             self.include_filename(self.env.get_function_filename(function))
 
-        function_name = self.get_autoname(function)
+        function_name = self.get_name(function)
         self.writer.class_begin(function_name)
         self.writer.line("public:")
         variables = function.get_variables()

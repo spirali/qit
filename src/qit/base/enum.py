@@ -5,7 +5,6 @@ import struct
 
 class Enum(Type):
 
-    autoname_prefix = "Enum"
     pass_by_value = True
 
     struct = struct.Struct('@i')
