@@ -33,7 +33,7 @@ def is_valid_name(value):
         return False
     if not value[0].isalpha() and value[0] != "_":
         return False
-    return all(c.isalnum() or value == "_" for c in value)
+    return all(c.isalnum() or c == "_" for c in value)
 
 def makedir_if_not_exists(dirname):
     if not os.path.isdir(dirname):
