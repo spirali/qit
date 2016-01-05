@@ -28,7 +28,7 @@ from qit.domains.mapping import Mapping
 from qit.domains.join import Join
 
 # Others
-from qit.domains.system import System
+from qit.domains.system import System, ActionSystem
 
 # Utils
 from qit.base.qitobject import fill_names
