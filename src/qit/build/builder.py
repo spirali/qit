@@ -119,6 +119,7 @@ class CppBuilder(object):
         self.writer.line("*/")
         self.writer.emptyline()
         self.writer.line("#include <vector>")
+        self.writer.line("#include <deque>")
         self.writer.line("#include <set>")
         self.writer.line("#include <map>")
         self.writer.line("#include <iostream>")

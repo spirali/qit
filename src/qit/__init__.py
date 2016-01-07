@@ -12,6 +12,7 @@ from qit.base.int import Int
 from qit.base.set import Set
 from qit.base.struct import Struct, KeyValue
 from qit.base.vector import Vector
+from qit.base.queue import Queue
 from qit.base.map import Map
 from qit.base.union import Union, Maybe
 from qit.base.qclass import Class
