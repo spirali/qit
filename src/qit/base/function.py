@@ -3,11 +3,13 @@ from qit.base.qitobject import QitObject
 from qit.base.expression import Expression
 from qit.base.utils import validate_variables, sorted_variables
 from qit.base.eqmixin import HashableEqMixin
+from qit.base.exception import InvalidType
+from qit.base.type import Type
 
 
 class FunctionParameter(HashableEqMixin):
 
-    def __init__(self, type, name, const):
+    def __init__(self, type, name, const=True):
         self.type = type
         self.name = name
         self.const = const
@@ -74,10 +76,10 @@ class Function(QitObject):
         return childs
 
     def build(self, builder):
-        return builder.build_functor(self)
+        return builder.build_function(self)
 
     def build_closure(self, builder, prefix):
-        return builder.build_functor(self, prefix)
+        return builder.build_function(self, prefix)
 
     def build_declaration(self, builder, name, skip_first=False):
         params = [ p.type.build_param(builder, p.name, p.const)
@@ -106,6 +108,57 @@ class Function(QitObject):
     def __call__(self, *args):
         return FunctionCall(self, args)
 
+
+class Functor(Type):
+
+    pass_by_value = True
+    def __init__(self, name=None, returns=None, *args):
+        self.name = name
+        self.return_type = returns
+        self.params = tuple()
+        for param in args:
+            if len(param) == 1: # type, name, cost = param
+                name = "p" + str(len(self.params))
+                self.params += (FunctionParameter(param[0], name), )
+            elif len(param) <= 3:
+                self.params += (FunctionParameter(*param), )
+            else:
+                raise InvalidType(param, "a tuple of type (Type[, String [, Bool]])")
+
+    @property
+    def childs(self):
+        return tuple(p.type for p in self.params)
+
+    def declare(self, builder):
+        if builder.check_declaration_key(self):
+            return
+
+        builder.write_code(
+            "typedef {{return_type}} (*{{self_type}})({{_params|join(',')}});",
+            { "self_type": self,
+              "return_type": self.return_type,
+              "_params": tuple(p.type.build_param(builder, p.name, p.const)
+                               for p in self.params) })
+
+    def read(self, f):
+        pass  # no value is written no value is read
+
+    @property
+    def write_function(self):
+        return self.prepare_write_function().code("") # empty function
+
+    def is_python_instance(self, function):
+        return isinstance(function, Function)
+
+    def build_value(self, builder, function):
+        return builder.get_name(function)
+
+    def value (self, function):
+        return function
+
+    def __repr__(self):
+        return "Functor({}({}))".format(repr(self.return_type),
+                ",".join(repr(p.type) for p in self.params))
 
 class FunctionCall(Expression):
 
@@ -148,5 +201,13 @@ class FunctionFromExpression(Function):
 
     def write_code(self, builder):
         builder.write_return_expression(self.expression)
+
+
+class FunctorFromFunction(Functor):
+
+    def __init__(self, function):
+        super().__init__("{}_functor".format(function.name),
+                         function.return_type,
+                         *((p.type, p.name, p.const) for p in function.params))
 
 from qit.base.variable import Variable

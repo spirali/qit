@@ -3,7 +3,7 @@
 # Basic
 from qit.base.qit import Qit
 from qit.base.variable import Variable
-from qit.base.function import Function
+from qit.base.function import Function, Functor, FunctorFromFunction
 
 # Types
 from qit.base.bool import Bool

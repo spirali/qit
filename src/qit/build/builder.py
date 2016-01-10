@@ -222,11 +222,11 @@ class CppBuilder(object):
     # Function
 
     def build_function_call(self, function_call):
-        functor = self.build_functor(function_call.function)
+        function = self.build_function(function_call.function)
         args = ",".join(e.build(self) for e in function_call.args)
-        return "{}({})".format(functor, args)
+        return "{}({})".format(function, args)
 
-    def build_functor(self, function, prefix=""):
+    def build_function(self, function, prefix=""):
         function_name = self.get_name(function)
         variables = sorted_variables(function.get_variables())
         if variables:

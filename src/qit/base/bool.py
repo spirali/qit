@@ -30,3 +30,6 @@ class Bool(Type):
         f = self.prepare_write_function()
         f.code("fwrite(&value, sizeof(value), 1, output);")
         return f
+
+    def __repr__(self):
+        return "Bool()"

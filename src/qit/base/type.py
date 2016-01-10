@@ -72,7 +72,5 @@ class Type(QitObject):
         return s.format(self.build(builder), name)
 
     def __mul__(self, other):
+        from qit.base.struct import Struct
         return Struct(self, other)
-
-
-from qit.base.struct import Struct
