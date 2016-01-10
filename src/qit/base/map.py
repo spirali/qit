@@ -1,25 +1,42 @@
 
 from qit.base.int import Int
 from qit.base.type import Type
+from qit.base.bool import Bool
+from qit.base.function import FunctorFromFunction
 
 class Map(Type):
 
-    def __init__(self, key_type, value_type):
+    def __init__(self, key_type, value_type, key_cmp_fn=None):
         self.name = None
 
         self.key_type = key_type
         self.value_type = value_type
+        self.key_cmp_fn = key_cmp_fn
+        self.key_cmp_functor = None
+        if key_cmp_fn is not None:
+            assert (isinstance(key_cmp_fn.return_type, Bool) and
+                    len(key_cmp_fn.params) and
+                    all(map(lambda p: isinstance(p.type, key_type.__class__),
+                            key_cmp_fn.params)))
+            self.key_cmp_functor = FunctorFromFunction(key_cmp_fn)
 
     @property
     def childs(self):
-        return (self.key_type, self.value_type)
+        childs = (self.key_type, self.value_type)
+        if self.key_cmp_functor is not None:
+            childs += (self.key_cmp_fn, self.key_cmp_functor)
+        return childs
 
     def childs_from_value(self, value):
         return tuple(v[0] for v in value) + tuple(v[1] for v in value)
 
     def build(self, builder):
-        return "std::map<{}, {} >".format(self.key_type.build(builder),
-                                          self.value_type.build(builder))
+        if self.key_cmp_functor is None:
+            return "std::map<{}, {} >".format(self.key_type.build(builder),
+                                              self.value_type.build(builder))
+        return "std::map<{}, {}, {} >".format(self.key_type.build(builder),
+                                              self.value_type.build(builder),
+                                              self.key_cmp_functor.build(builder))
 
     def build_destructor(self, builder):
         return "~map<{}, {} >".format(self.key_type.build(builder),
@@ -55,8 +72,15 @@ class Map(Type):
         arg = ",".join("{{ {0}, {1} }}".format(
             value.build(builder), image.build(builder))
                 for value, image in value)
-        return "{0} ({{ {1} }})".format(self.build(builder), arg)
+        if self.key_cmp_fn is None:
+            return "{0} ({{ {1} }})".format(self.build(builder), arg)
+        return "{0} ({{ {1} }}, {2})".format(self.build(builder), arg,
+                builder.get_name(self.key_cmp_fn))
 
     def __repr__(self):
-        return "Map({}, {})".format(repr(self.key_type),
-                                    repr(self.value_type))
+        if self.key_cmp_functor is None:
+            return "Map({}, {})".format(repr(self.key_type),
+                                        repr(self.value_type))
+        return "Map({}, {}, {})".format(repr(self.key_type),
+                                        repr(self.value_type),
+                                        repr(self.key_cmp_functor))
