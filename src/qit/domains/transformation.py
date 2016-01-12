@@ -1,9 +1,11 @@
 
 from qit.base.int import Int
+from qit.base.bool import Bool
 from qit.base.vector import Vector
 from qit.base.struct import Struct, KeyValue
 from qit.base.variable import Variable
 from qit.domains.iterator import Iterator
+from qit.base.function import Function
 
 
 class Transformation(Iterator):
@@ -70,9 +72,15 @@ class MapTransformation(Transformation):
 
 class SortTransformation(Transformation):
 
-    def __init__(self, iterator, ascending=True):
+    def __init__(self, iterator, ascending=True, cmp_fn=None):
         itype = Int() * Vector(iterator.element_type)
         super().__init__(itype, iterator.element_type)
+
+        if cmp_fn is None:
+            cmp_fn = Function("compare").takes(iterator.element_type, "e1")\
+                                        .takes(iterator.element_type, "e2")\
+                                        .returns(Bool())
+            cmp_fn.code("return e1 < e2;")
 
         # Since iter.v1 is never changed, we use it to detect
         # if reset_fn is called for the first time,
@@ -81,9 +89,10 @@ class SortTransformation(Transformation):
             iter.v0 = 0;
             if (iter.v1.size() == 0) {
                 iter.v1 = {{vector}};
-                std::sort(iter.v1.begin(), iter.v1.end());
+                std::sort(iter.v1.begin(), iter.v1.end(), {{compare}});
             }
-        """, vector=iterator.to_vector())
+        """, vector=iterator.to_vector(),
+             compare=cmp_fn)
         self.next_fn.code("iter.v0++;");
         self.is_valid_fn.code("return iter.v0 < iter.v1.size();");
         self.value_fn.code("return iter.v1[iter.v0];");

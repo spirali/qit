@@ -36,8 +36,8 @@ class Iterator(QitObject):
     def map_kv(self, function):
         return MapTransformation(self, function, True)
 
-    def sort(self, asceding=True):
-        return SortTransformation(self, asceding)
+    def sort(self, asceding=True, cmp_fn=None):
+        return SortTransformation(self, asceding, cmp_fn)
 
     def filter(self, function):
         return FilterTransformation(self, function)
