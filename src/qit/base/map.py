@@ -75,7 +75,7 @@ class Map(Type):
         if self.key_cmp_fn is None:
             return "{0} ({{ {1} }})".format(self.build(builder), arg)
         return "{0} ({{ {1} }}, {2})".format(self.build(builder), arg,
-                builder.get_name(self.key_cmp_fn))
+                self.key_cmp_functor.build_value(builder, self.key_cmp_fn))
 
     def __repr__(self):
         if self.key_cmp_functor is None:

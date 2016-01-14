@@ -134,7 +134,7 @@ class Functor(Type):
             return
 
         builder.write_code(
-            "typedef {{return_type}} (*{{self_type}})({{_params|join(',')}});",
+            "typedef std::function<{{return_type}}({{_params|join(',')}}) > {{self_type}};",
             { "self_type": self,
               "return_type": self.return_type,
               "_params": tuple(p.type.build_param(builder, p.name, p.const)
@@ -151,7 +151,12 @@ class Functor(Type):
         return isinstance(function, Function)
 
     def build_value(self, builder, function):
-        return builder.get_name(function)
+        begin = "{}({}".format(self.build(builder), builder.get_name(function))
+        variables = sorted_variables(function.get_variables())
+        if variables:
+            return "{}({}))".format(begin,
+                    ",".join(v.build(builder) for v in variables))
+        return "{})".format(begin)
 
     def value (self, function):
         return function

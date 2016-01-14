@@ -126,6 +126,7 @@ class CppBuilder(object):
         self.writer.line("#include <assert.h>")
         self.writer.line("#include <stdlib.h>")
         self.writer.line("#include <time.h>")
+        self.writer.line("#include <functional>")
         self.writer.line("#include <algorithm>")
         self.writer.line("#include <random>")
         self.writer.emptyline()
