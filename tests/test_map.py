@@ -63,3 +63,20 @@ def test_map_with_own_key_comparator():
     cmp_keys.code("return key1.y < key2.y;")
     del m[(1, 1)] # this value is replace by (2,1) because of changed function
     assert ctx.run(qm.value(m)) == m
+
+def test_map_with_own_key_comparator2():
+    ctx = Qit()
+    m = { (1, 1): (1, 2),
+          (2, 1): (2, 3),
+          (3, 5): (3, 8),
+          (4, 7): (4, 11) }
+
+    z = Int().variable("z")
+    mtype = Struct((Int(), "x"), (Int(), "y"))
+    cmp_keys = Function().takes(mtype, "key1")\
+                         .takes(mtype, "key2")\
+                         .reads(z)\
+                         .returns(Bool())
+    cmp_keys.code("return key1.x < key2.x && key1.x <= z;")
+    qm = Map(mtype, mtype, cmp_keys)
+    assert ctx.run(qm.value(m), args={z: 6}) == m
